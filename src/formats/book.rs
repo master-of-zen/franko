@@ -334,3 +334,156 @@ impl TocEntry {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_authors_string_empty() {
+        let meta = BookMetadata::default();
+        assert_eq!(meta.authors_string(), "Unknown Author");
+    }
+
+    #[test]
+    fn test_authors_string_single() {
+        let meta = BookMetadata {
+            authors: vec!["Jane Austen".to_string()],
+            ..Default::default()
+        };
+        assert_eq!(meta.authors_string(), "Jane Austen");
+    }
+
+    #[test]
+    fn test_authors_string_two() {
+        let meta = BookMetadata {
+            authors: vec!["Author One".to_string(), "Author Two".to_string()],
+            ..Default::default()
+        };
+        assert_eq!(meta.authors_string(), "Author One and Author Two");
+    }
+
+    #[test]
+    fn test_authors_string_multiple() {
+        let meta = BookMetadata {
+            authors: vec![
+                "Author One".to_string(),
+                "Author Two".to_string(),
+                "Author Three".to_string(),
+            ],
+            ..Default::default()
+        };
+        assert_eq!(
+            meta.authors_string(),
+            "Author One, Author Two, and Author Three"
+        );
+    }
+
+    #[test]
+    fn test_toc_entry_new() {
+        let entry = TocEntry::new("Chapter 1".to_string(), "#ch1".to_string(), 0);
+        assert_eq!(entry.title, "Chapter 1");
+        assert_eq!(entry.href, "#ch1");
+        assert_eq!(entry.level, 0);
+        assert!(entry.children.is_empty());
+    }
+
+    #[test]
+    fn test_content_block_is_heading() {
+        let heading = ContentBlock::Heading {
+            level: 1,
+            text: "Title".to_string(),
+        };
+        assert!(heading.is_heading());
+
+        let para = ContentBlock::Paragraph {
+            text: "Some text".to_string(),
+            styles: vec![],
+        };
+        assert!(!para.is_heading());
+    }
+
+    #[test]
+    fn test_content_block_is_paragraph() {
+        let para = ContentBlock::Paragraph {
+            text: "Some text".to_string(),
+            styles: vec![],
+        };
+        assert!(para.is_paragraph());
+
+        let heading = ContentBlock::Heading {
+            level: 1,
+            text: "Title".to_string(),
+        };
+        assert!(!heading.is_paragraph());
+    }
+
+    #[test]
+    fn test_content_block_word_count() {
+        let para = ContentBlock::Paragraph {
+            text: "This is a test with seven words".to_string(),
+            styles: vec![],
+        };
+        assert_eq!(para.word_count(), 7);
+    }
+
+    #[test]
+    fn test_chapter_new() {
+        let chapter = Chapter::new("ch1".to_string(), 0);
+        assert_eq!(chapter.id, "ch1");
+        assert_eq!(chapter.order, 0);
+        assert!(chapter.title.is_none());
+        assert!(chapter.blocks.is_empty());
+    }
+
+    #[test]
+    fn test_chapter_display_title() {
+        let mut chapter = Chapter::new("ch1".to_string(), 0);
+        assert_eq!(chapter.display_title(), "Section 1");
+
+        chapter.title = Some("Introduction".to_string());
+        assert_eq!(chapter.display_title(), "Introduction");
+
+        chapter.number = Some(1);
+        assert_eq!(chapter.display_title(), "Chapter 1: Introduction");
+    }
+
+    #[test]
+    fn test_chapter_word_count() {
+        let mut chapter = Chapter::new("ch1".to_string(), 0);
+        chapter.blocks.push(ContentBlock::Paragraph {
+            text: "First paragraph with five words".to_string(),
+            styles: vec![],
+        });
+        chapter.blocks.push(ContentBlock::Paragraph {
+            text: "Second paragraph".to_string(),
+            styles: vec![],
+        });
+        assert_eq!(chapter.word_count(), 7);
+    }
+
+    #[test]
+    fn test_book_content_total_paragraphs() {
+        let mut content = BookContent::default();
+        let mut ch1 = Chapter::new("ch1".to_string(), 0);
+        ch1.blocks.push(ContentBlock::Paragraph {
+            text: "Para 1".to_string(),
+            styles: vec![],
+        });
+        ch1.blocks.push(ContentBlock::Paragraph {
+            text: "Para 2".to_string(),
+            styles: vec![],
+        });
+
+        let mut ch2 = Chapter::new("ch2".to_string(), 1);
+        ch2.blocks.push(ContentBlock::Paragraph {
+            text: "Para 3".to_string(),
+            styles: vec![],
+        });
+
+        content.chapters.push(ch1);
+        content.chapters.push(ch2);
+
+        assert_eq!(content.total_paragraphs(), 3);
+    }
+}

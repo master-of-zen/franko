@@ -6,7 +6,7 @@ use std::sync::Arc;
 use parking_lot::RwLock;
 use tantivy::collector::TopDocs;
 use tantivy::query::QueryParser;
-use tantivy::schema::{Field, Schema, FAST, STORED, STRING, TEXT};
+use tantivy::schema::{Field, Schema, Value, FAST, STORED, STRING, TEXT};
 use tantivy::{doc, Index, IndexReader, IndexWriter, ReloadPolicy, TantivyDocument};
 
 use crate::error::{FrankoError, Result};
@@ -316,41 +316,40 @@ impl std::fmt::Debug for SearchIndex {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::formats::{BookMetadata, Chapter, ContentBlock};
+    use crate::formats::{BookContent, BookMetadata, Chapter, ContentBlock};
+    use std::path::PathBuf;
 
     fn create_test_book() -> Book {
+        let mut ch1 = Chapter::new("intro".to_string(), 0);
+        ch1.title = Some("Introduction".to_string());
+        ch1.blocks.push(ContentBlock::Paragraph {
+            text: "This is the introduction to the test book.".to_string(),
+            styles: vec![],
+        });
+
+        let mut ch2 = Chapter::new("ch1".to_string(), 1);
+        ch2.title = Some("Chapter One".to_string());
+        ch2.blocks.push(ContentBlock::Paragraph {
+            text: "The quick brown fox jumps over the lazy dog.".to_string(),
+            styles: vec![],
+        });
+        ch2.blocks.push(ContentBlock::Paragraph {
+            text: "Rust is a systems programming language.".to_string(),
+            styles: vec![],
+        });
+
         Book {
-            id: "test-book-1".to_string(),
             metadata: BookMetadata {
                 title: "Test Book".to_string(),
                 authors: vec!["Test Author".to_string()],
                 ..Default::default()
             },
-            chapters: vec![
-                Chapter {
-                    title: "Introduction".to_string(),
-                    content: vec![ContentBlock::Paragraph {
-                        text: "This is the introduction to the test book.".to_string(),
-                        style: Default::default(),
-                    }],
-                    ..Default::default()
-                },
-                Chapter {
-                    title: "Chapter One".to_string(),
-                    content: vec![
-                        ContentBlock::Paragraph {
-                            text: "The quick brown fox jumps over the lazy dog.".to_string(),
-                            style: Default::default(),
-                        },
-                        ContentBlock::Paragraph {
-                            text: "Rust is a systems programming language.".to_string(),
-                            style: Default::default(),
-                        },
-                    ],
-                    ..Default::default()
-                },
-            ],
-            ..Default::default()
+            content: BookContent {
+                chapters: vec![ch1, ch2],
+                toc: vec![],
+            },
+            source_path: PathBuf::from("/test/book.epub"),
+            format: "epub".to_string(),
         }
     }
 
@@ -363,7 +362,7 @@ mod tests {
 
         let results = index.search("quick brown fox", 10).unwrap();
         assert!(!results.is_empty());
-        assert_eq!(results[0].book_id, "test-book-1");
+        assert_eq!(results[0].book_id, "Test Book");
         assert_eq!(results[0].chapter_index, 1);
     }
 
@@ -375,7 +374,7 @@ mod tests {
         index.index_book(&book).unwrap();
 
         let results = index
-            .search_in_book("test-book-1", "Rust programming", 10)
+            .search_in_book("Test Book", "Rust programming", 10)
             .unwrap();
         assert!(!results.is_empty());
     }
@@ -388,9 +387,9 @@ mod tests {
         index.index_book(&book).unwrap();
         assert!(index.document_count().unwrap() > 0);
 
-        index.remove_book("test-book-1").unwrap();
+        index.remove_book("Test Book").unwrap();
         // After removal, searching should return no results
-        let results = index.search_in_book("test-book-1", "fox", 10).unwrap();
+        let results = index.search_in_book("Test Book", "fox", 10).unwrap();
         assert!(results.is_empty());
     }
 }
