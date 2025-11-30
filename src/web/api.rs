@@ -44,6 +44,8 @@ pub fn router() -> Router<Arc<AppState>> {
         // Statistics API
         .route("/statistics", get(get_library_statistics))
         .route("/books/:id/statistics", get(get_book_statistics))
+        // Folder scanning
+        .route("/scan-folder", post(scan_folder))
         // Settings API
         .route("/settings", get(get_settings))
         .route("/settings", put(update_settings))
@@ -127,6 +129,21 @@ pub struct ListBooksQuery {
 pub struct AddBookRequest {
     pub path: String,
     pub tags: Option<Vec<String>>,
+}
+
+#[derive(Deserialize)]
+pub struct ScanFolderRequest {
+    pub path: String,
+    pub recursive: Option<bool>,
+    pub tags: Option<Vec<String>>,
+}
+
+#[derive(Serialize)]
+pub struct ScanResult {
+    pub added: usize,
+    pub failed: usize,
+    pub books: Vec<BookSummary>,
+    pub errors: Vec<String>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -235,6 +252,80 @@ async fn add_book(
         })),
         Err(e) => Json(ApiResponse::err(e.to_string())),
     }
+}
+
+/// Supported book extensions
+const BOOK_EXTENSIONS: &[&str] = &["epub", "pdf", "md", "markdown", "txt", "text"];
+
+async fn scan_folder(
+    State(state): State<Arc<AppState>>,
+    Json(request): Json<ScanFolderRequest>,
+) -> Json<ApiResponse<ScanResult>> {
+    let path = std::path::Path::new(&request.path);
+
+    if !path.exists() {
+        return Json(ApiResponse::err("Path does not exist"));
+    }
+
+    if !path.is_dir() {
+        return Json(ApiResponse::err("Path is not a directory"));
+    }
+
+    let recursive = request.recursive.unwrap_or(true);
+    let tags = request.tags.unwrap_or_default();
+
+    let mut library = state.library.write().await;
+    let mut added = 0;
+    let mut failed = 0;
+    let mut books = Vec::new();
+    let mut errors = Vec::new();
+
+    let walker = if recursive {
+        walkdir::WalkDir::new(path)
+    } else {
+        walkdir::WalkDir::new(path).max_depth(1)
+    };
+
+    for entry in walker.into_iter().filter_map(|e| e.ok()) {
+        let file_path = entry.path();
+        if file_path.is_file() {
+            if let Some(ext) = file_path.extension().and_then(|e| e.to_str()) {
+                if BOOK_EXTENSIONS.contains(&ext.to_lowercase().as_str()) {
+                    match library.add_book(file_path, Some(tags.clone())) {
+                        Ok(entry) => {
+                            books.push(BookSummary {
+                                id: entry.id.clone(),
+                                title: entry.metadata.title.clone(),
+                                authors: entry.metadata.authors.clone(),
+                                format: entry.format.clone(),
+                                progress: 0.0,
+                                cover_url: None,
+                            });
+                            added += 1;
+                        }
+                        Err(e) => {
+                            errors.push(format!("{}: {}", file_path.display(), e));
+                            failed += 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Save the library after adding books
+    if added > 0 {
+        if let Err(e) = library.save() {
+            errors.push(format!("Failed to save library: {}", e));
+        }
+    }
+
+    Json(ApiResponse::ok(ScanResult {
+        added,
+        failed,
+        books,
+        errors,
+    }))
 }
 
 async fn get_book(
