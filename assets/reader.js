@@ -1,0 +1,873 @@
+// Franko Reader - JavaScript
+
+(function() {
+    'use strict';
+
+    // DOM Elements
+    const sidebar = document.getElementById('sidebar');
+    const toggleSidebarBtn = document.getElementById('toggle-sidebar');
+    const closeSidebarBtn = document.getElementById('close-sidebar');
+    const content = document.getElementById('content');
+    const progressFill = document.getElementById('progress-fill');
+    const increaseFontBtn = document.getElementById('increase-font');
+    const decreaseFontBtn = document.getElementById('decrease-font');
+    const toggleThemeBtn = document.getElementById('toggle-theme');
+    const searchInput = document.getElementById('search');
+
+    // State
+    let fontSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--font-size')) || 16;
+    const minFontSize = 12;
+    const maxFontSize = 32;
+
+    // Initialize
+    function init() {
+        setupEventListeners();
+        updateProgress();
+        loadSettings();
+        initAnimations();
+        initSearch();
+    }
+
+    // Event Listeners
+    function setupEventListeners() {
+        // Sidebar toggle
+        if (toggleSidebarBtn) {
+            toggleSidebarBtn.addEventListener('click', toggleSidebar);
+        }
+        if (closeSidebarBtn) {
+            closeSidebarBtn.addEventListener('click', toggleSidebar);
+        }
+
+        // Close sidebar when clicking outside
+        document.addEventListener('click', (e) => {
+            if (sidebar && sidebar.classList.contains('open') && 
+                !sidebar.contains(e.target) && 
+                e.target !== toggleSidebarBtn) {
+                sidebar.classList.remove('open');
+            }
+        });
+
+        // Font size controls
+        if (increaseFontBtn) {
+            increaseFontBtn.addEventListener('click', () => changeFontSize(2));
+        }
+        if (decreaseFontBtn) {
+            decreaseFontBtn.addEventListener('click', () => changeFontSize(-2));
+        }
+
+        // Theme toggle
+        if (toggleThemeBtn) {
+            toggleThemeBtn.addEventListener('click', toggleTheme);
+        }
+
+        // Scroll progress
+        if (content) {
+            window.addEventListener('scroll', throttle(updateProgress, 50));
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', handleKeyboard);
+
+        // Save progress on leave
+        window.addEventListener('beforeunload', saveProgress);
+
+        // Smooth scroll for TOC links
+        document.querySelectorAll('.toc a').forEach(link => {
+            link.addEventListener('click', () => {
+                if (sidebar) {
+                    sidebar.classList.remove('open');
+                }
+            });
+        });
+    }
+
+    // Throttle function for performance
+    function throttle(func, limit) {
+        let inThrottle;
+        return function(...args) {
+            if (!inThrottle) {
+                func.apply(this, args);
+                inThrottle = true;
+                setTimeout(() => inThrottle = false, limit);
+            }
+        };
+    }
+
+    // Initialize animations
+    function initAnimations() {
+        // Fade in book cards
+        const cards = document.querySelectorAll('.book-card, .library-card');
+        if ('IntersectionObserver' in window) {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            cards.forEach(card => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+                observer.observe(card);
+            });
+        }
+    }
+
+    // Initialize search functionality
+    function initSearch() {
+        if (searchInput) {
+            searchInput.addEventListener('input', debounce(handleSearch, 300));
+        }
+    }
+
+    // Debounce function
+    function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+    }
+
+    // Handle search input
+    function handleSearch(e) {
+        const query = e.target.value.toLowerCase().trim();
+        const cards = document.querySelectorAll('.book-card, .library-card, .library-table tbody tr');
+        
+        cards.forEach(card => {
+            const title = card.querySelector('h3, .title, td:first-child')?.textContent?.toLowerCase() || '';
+            const author = card.querySelector('.author, td:nth-child(2)')?.textContent?.toLowerCase() || '';
+            
+            if (title.includes(query) || author.includes(query) || query === '') {
+                card.style.display = '';
+                card.style.opacity = '1';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    // Sidebar
+    function toggleSidebar() {
+        if (sidebar) {
+            sidebar.classList.toggle('open');
+            
+            // Add overlay
+            let overlay = document.querySelector('.sidebar-overlay');
+            if (sidebar.classList.contains('open')) {
+                if (!overlay) {
+                    overlay = document.createElement('div');
+                    overlay.className = 'sidebar-overlay';
+                    overlay.style.cssText = `
+                        position: fixed;
+                        inset: 0;
+                        background: rgba(0, 0, 0, 0.5);
+                        z-index: 150;
+                        opacity: 0;
+                        transition: opacity 0.3s ease;
+                    `;
+                    document.body.appendChild(overlay);
+                    setTimeout(() => overlay.style.opacity = '1', 10);
+                    overlay.addEventListener('click', toggleSidebar);
+                }
+            } else if (overlay) {
+                overlay.style.opacity = '0';
+                setTimeout(() => overlay.remove(), 300);
+            }
+        }
+    }
+
+    // Font size
+    function changeFontSize(delta) {
+        fontSize = Math.max(minFontSize, Math.min(maxFontSize, fontSize + delta));
+        document.documentElement.style.setProperty('--font-size', fontSize + 'px');
+        
+        // Show feedback
+        showToast(`Font size: ${fontSize}px`);
+        saveSettings();
+    }
+
+    // Theme
+    function toggleTheme() {
+        const html = document.documentElement;
+        const isDark = html.classList.contains('dark') || !html.classList.contains('light');
+        
+        if (isDark) {
+            html.classList.remove('dark');
+            html.classList.add('light');
+            showToast('Light mode');
+        } else {
+            html.classList.remove('light');
+            html.classList.add('dark');
+            showToast('Dark mode');
+        }
+        
+        saveSettings();
+    }
+
+    // Toast notification
+    function showToast(message) {
+        let toast = document.querySelector('.toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 2rem;
+                left: 50%;
+                transform: translateX(-50%) translateY(20px);
+                padding: 0.75rem 1.5rem;
+                background: var(--bg-elevated, #2a2a2a);
+                color: var(--text-primary, #fff);
+                border-radius: 9999px;
+                font-size: 0.875rem;
+                font-weight: 500;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                opacity: 0;
+                transition: all 0.3s ease;
+                z-index: 1000;
+                pointer-events: none;
+            `;
+            document.body.appendChild(toast);
+        }
+        
+        toast.textContent = message;
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(-50%) translateY(0)';
+        
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(-50%) translateY(20px)';
+        }, 2000);
+    }
+
+    // Progress
+    function updateProgress() {
+        if (!progressFill) return;
+
+        const scrollTop = window.scrollY;
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+        
+        progressFill.style.width = progress + '%';
+    }
+
+    // Keyboard shortcuts
+    function handleKeyboard(e) {
+        // Don't handle if in input
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+            return;
+        }
+
+        switch (e.key) {
+            case 'ArrowLeft':
+            case 'h':
+                navigatePrev();
+                break;
+            case 'ArrowRight':
+            case 'l':
+                navigateNext();
+                break;
+            case 'j':
+                window.scrollBy({ top: 100, behavior: 'smooth' });
+                break;
+            case 'k':
+                window.scrollBy({ top: -100, behavior: 'smooth' });
+                break;
+            case ' ':
+                if (!e.shiftKey) {
+                    e.preventDefault();
+                    window.scrollBy({ top: window.innerHeight - 100, behavior: 'smooth' });
+                } else {
+                    e.preventDefault();
+                    window.scrollBy({ top: -(window.innerHeight - 100), behavior: 'smooth' });
+                }
+                break;
+            case 'g':
+                if (e.shiftKey) {
+                    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+                } else {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+                break;
+            case 't':
+                toggleSidebar();
+                break;
+            case '=':
+            case '+':
+                changeFontSize(2);
+                break;
+            case '-':
+                changeFontSize(-2);
+                break;
+            case 'd':
+                toggleTheme();
+                break;
+            case '/':
+                e.preventDefault();
+                openSearch();
+                break;
+            case 'Escape':
+                if (sidebar && sidebar.classList.contains('open')) {
+                    toggleSidebar();
+                }
+                break;
+        }
+    }
+
+    // Navigation
+    function navigatePrev() {
+        const prevLink = document.querySelector('.nav-prev');
+        if (prevLink) {
+            prevLink.click();
+        }
+    }
+
+    function navigateNext() {
+        const nextLink = document.querySelector('.nav-next');
+        if (nextLink) {
+            nextLink.click();
+        }
+    }
+
+    // Search
+    function openSearch() {
+        const searchInput = document.getElementById('search');
+        if (searchInput) {
+            searchInput.focus();
+            searchInput.select();
+        } else {
+            showToast('Press / to search');
+        }
+    }
+
+    // Settings persistence
+    function saveSettings() {
+        const settings = {
+            fontSize: fontSize,
+            theme: document.documentElement.classList.contains('light') ? 'light' : 'dark'
+        };
+        localStorage.setItem('franko-settings', JSON.stringify(settings));
+    }
+
+    function loadSettings() {
+        const saved = localStorage.getItem('franko-settings');
+        if (saved) {
+            try {
+                const settings = JSON.parse(saved);
+                
+                if (settings.fontSize) {
+                    fontSize = settings.fontSize;
+                    document.documentElement.style.setProperty('--font-size', fontSize + 'px');
+                }
+                
+                if (settings.theme) {
+                    document.documentElement.classList.remove('dark', 'light');
+                    document.documentElement.classList.add(settings.theme);
+                }
+                
+                // Load font family
+                if (settings.fontFamily) {
+                    const families = {
+                        system: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                        serif: 'Georgia, Cambria, "Times New Roman", Times, serif',
+                        mono: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                        inter: '"Inter", -apple-system, sans-serif',
+                        merriweather: '"Merriweather", Georgia, serif',
+                        literata: '"Literata", Georgia, serif',
+                        jetbrains: '"JetBrains Mono", ui-monospace, monospace',
+                        fira: '"Fira Code", ui-monospace, monospace',
+                        opendyslexic: '"OpenDyslexic", sans-serif'
+                    };
+                    if (families[settings.fontFamily]) {
+                        document.documentElement.style.setProperty('--font-family-reading', families[settings.fontFamily]);
+                    }
+                }
+                
+                // Load line height
+                if (settings.lineHeight) {
+                    document.documentElement.style.setProperty('--line-height', settings.lineHeight);
+                }
+                
+                // Load text width
+                if (settings.textWidth) {
+                    const widths = { narrow: '600px', medium: '800px', wide: '1000px', full: '100%' };
+                    if (widths[settings.textWidth]) {
+                        document.documentElement.style.setProperty('--text-width', widths[settings.textWidth]);
+                    }
+                }
+                
+                // Load accent color
+                if (settings.accentColor) {
+                    const colors = {
+                        indigo: { primary: '#6366f1', secondary: '#818cf8' },
+                        purple: { primary: '#a855f7', secondary: '#c084fc' },
+                        pink: { primary: '#ec4899', secondary: '#f472b6' },
+                        blue: { primary: '#3b82f6', secondary: '#60a5fa' },
+                        teal: { primary: '#14b8a6', secondary: '#2dd4bf' },
+                        green: { primary: '#22c55e', secondary: '#4ade80' },
+                        orange: { primary: '#f97316', secondary: '#fb923c' },
+                        red: { primary: '#ef4444', secondary: '#f87171' }
+                    };
+                    if (colors[settings.accentColor]) {
+                        document.documentElement.style.setProperty('--accent-primary', colors[settings.accentColor].primary);
+                        document.documentElement.style.setProperty('--accent-secondary', colors[settings.accentColor].secondary);
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to load settings', e);
+            }
+        }
+    }
+
+    // Progress persistence
+    function saveProgress() {
+        const bookId = getBookId();
+        if (!bookId) return;
+
+        const scrollPosition = window.scrollY;
+        const chapter = getCurrentChapter();
+
+        const progress = {
+            scroll: scrollPosition,
+            chapter: chapter,
+            timestamp: Date.now()
+        };
+
+        localStorage.setItem(`franko-progress-${bookId}`, JSON.stringify(progress));
+
+        // Also try to save to API
+        fetch(`/api/books/${bookId}/progress`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                chapter: chapter,
+                block: 0,
+                scroll_offset: scrollPosition
+            })
+        }).catch(() => {
+            // Ignore errors, local storage is the fallback
+        });
+    }
+
+    function loadProgress() {
+        const bookId = getBookId();
+        if (!bookId) return;
+
+        const saved = localStorage.getItem(`franko-progress-${bookId}`);
+        if (saved) {
+            try {
+                const progress = JSON.parse(saved);
+                if (progress.scroll) {
+                    window.scrollTo(0, progress.scroll);
+                }
+            } catch (e) {
+                console.error('Failed to load progress', e);
+            }
+        }
+    }
+
+    function getBookId() {
+        const match = window.location.pathname.match(/\/read\/([^\/]+)/);
+        return match ? match[1] : null;
+    }
+
+    function getCurrentChapter() {
+        const params = new URLSearchParams(window.location.search);
+        return parseInt(params.get('chapter')) || 0;
+    }
+
+    // Auto-save progress periodically
+    setInterval(() => {
+        if (getBookId()) {
+            saveProgress();
+        }
+    }, 30000); // Every 30 seconds
+
+    // ========== Settings Page Functions ==========
+
+    function initSettingsPage() {
+        if (!document.querySelector('.settings-page')) return;
+
+        // Theme buttons
+        document.querySelectorAll('.theme-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const theme = btn.dataset.theme;
+                setTheme(theme);
+                
+                // Update active state
+                document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+
+        // Color picker
+        document.querySelectorAll('.color-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const color = btn.dataset.color;
+                setAccentColor(color);
+                
+                document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+
+        // Font family select
+        const fontFamilySelect = document.getElementById('font-family');
+        if (fontFamilySelect) {
+            fontFamilySelect.addEventListener('change', () => {
+                setFontFamily(fontFamilySelect.value);
+            });
+        }
+
+        // Font size range
+        const fontSizeRange = document.getElementById('font-size-range');
+        if (fontSizeRange) {
+            fontSizeRange.addEventListener('input', () => {
+                const size = fontSizeRange.value;
+                setFontSizeValue(parseInt(size));
+            });
+        }
+
+        // Line height select
+        const lineHeightSelect = document.getElementById('line-height');
+        if (lineHeightSelect) {
+            lineHeightSelect.addEventListener('change', () => {
+                setLineHeight(lineHeightSelect.value);
+            });
+        }
+
+        // Text width select
+        const textWidthSelect = document.getElementById('text-width');
+        if (textWidthSelect) {
+            textWidthSelect.addEventListener('change', () => {
+                setTextWidth(textWidthSelect.value);
+            });
+        }
+
+        // Toggle switches
+        document.querySelectorAll('.toggle input').forEach(toggle => {
+            toggle.addEventListener('change', () => {
+                const setting = toggle.id;
+                const value = toggle.checked;
+                saveSetting(setting, value);
+                showToast(`${formatSettingName(setting)}: ${value ? 'On' : 'Off'}`);
+            });
+        });
+
+        // Save button
+        const saveBtn = document.getElementById('save-settings');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => {
+                saveAllSettings();
+                showToast('Settings saved!');
+            });
+        }
+
+        // Reset button
+        const resetBtn = document.getElementById('reset-settings');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                if (confirm('Are you sure you want to reset all settings to defaults?')) {
+                    resetSettings();
+                    showToast('Settings reset to defaults');
+                    location.reload();
+                }
+            });
+        }
+
+        // Export button
+        const exportBtn = document.getElementById('export-settings');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', exportSettings);
+        }
+
+        // Import button
+        const importBtn = document.getElementById('import-settings');
+        if (importBtn) {
+            importBtn.addEventListener('click', () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                input.onchange = (e) => importSettings(e.target.files[0]);
+                input.click();
+            });
+        }
+
+        // Load current settings
+        loadSettingsPage();
+    }
+
+    function setTheme(theme) {
+        document.documentElement.classList.remove('dark', 'light', 'auto');
+        if (theme !== 'auto') {
+            document.documentElement.classList.add(theme);
+        }
+        saveSetting('theme', theme);
+        showToast(`Theme: ${theme.charAt(0).toUpperCase() + theme.slice(1)}`);
+    }
+
+    function setAccentColor(color) {
+        const colors = {
+            indigo: { primary: '#6366f1', secondary: '#818cf8' },
+            purple: { primary: '#a855f7', secondary: '#c084fc' },
+            pink: { primary: '#ec4899', secondary: '#f472b6' },
+            blue: { primary: '#3b82f6', secondary: '#60a5fa' },
+            teal: { primary: '#14b8a6', secondary: '#2dd4bf' },
+            green: { primary: '#22c55e', secondary: '#4ade80' },
+            orange: { primary: '#f97316', secondary: '#fb923c' },
+            red: { primary: '#ef4444', secondary: '#f87171' }
+        };
+        
+        if (colors[color]) {
+            document.documentElement.style.setProperty('--accent-primary', colors[color].primary);
+            document.documentElement.style.setProperty('--accent-secondary', colors[color].secondary);
+            saveSetting('accentColor', color);
+            showToast(`Accent: ${color.charAt(0).toUpperCase() + color.slice(1)}`);
+        }
+    }
+
+    function setFontFamily(family) {
+        const families = {
+            system: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            serif: 'Georgia, Cambria, "Times New Roman", Times, serif',
+            mono: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+            inter: '"Inter", -apple-system, sans-serif',
+            merriweather: '"Merriweather", Georgia, serif',
+            literata: '"Literata", Georgia, serif',
+            jetbrains: '"JetBrains Mono", ui-monospace, monospace',
+            fira: '"Fira Code", ui-monospace, monospace',
+            opendyslexic: '"OpenDyslexic", sans-serif'
+        };
+        
+        const familyNames = {
+            system: 'System',
+            serif: 'Serif',
+            mono: 'Monospace',
+            inter: 'Inter',
+            merriweather: 'Merriweather',
+            literata: 'Literata',
+            jetbrains: 'JetBrains Mono',
+            fira: 'Fira Code',
+            opendyslexic: 'OpenDyslexic'
+        };
+        
+        if (families[family]) {
+            document.documentElement.style.setProperty('--font-family-reading', families[family]);
+            saveSetting('fontFamily', family);
+            showToast(`Font: ${familyNames[family] || family}`);
+        }
+    }
+
+    function setFontSizeValue(size) {
+        document.documentElement.style.setProperty('--font-size', size + 'px');
+        fontSize = size;
+        saveSetting('fontSize', size);
+        
+        const display = document.querySelector('.font-size-display');
+        if (display) display.textContent = size + 'px';
+    }
+
+    function setLineHeight(height) {
+        document.documentElement.style.setProperty('--line-height', height);
+        saveSetting('lineHeight', height);
+    }
+
+    function setTextWidth(width) {
+        const widths = {
+            narrow: '600px',
+            medium: '800px',
+            wide: '1000px',
+            full: '100%'
+        };
+        
+        if (widths[width]) {
+            document.documentElement.style.setProperty('--text-width', widths[width]);
+            saveSetting('textWidth', width);
+        }
+    }
+
+    function saveSetting(key, value) {
+        const settings = JSON.parse(localStorage.getItem('franko-settings') || '{}');
+        settings[key] = value;
+        localStorage.setItem('franko-settings', JSON.stringify(settings));
+    }
+
+    function saveAllSettings() {
+        // Gather all settings from the page
+        const settings = {};
+        
+        // Theme
+        const activeTheme = document.querySelector('.theme-btn.active');
+        if (activeTheme) settings.theme = activeTheme.dataset.theme;
+        
+        // Color
+        const activeColor = document.querySelector('.color-btn.active');
+        if (activeColor) settings.accentColor = activeColor.dataset.color;
+        
+        // Font family
+        const fontFamily = document.getElementById('font-family');
+        if (fontFamily) settings.fontFamily = fontFamily.value;
+        
+        // Font size
+        const fontSizeRange = document.getElementById('font-size-range');
+        if (fontSizeRange) settings.fontSize = parseInt(fontSizeRange.value);
+        
+        // Line height
+        const lineHeight = document.getElementById('line-height');
+        if (lineHeight) settings.lineHeight = lineHeight.value;
+        
+        // Text width
+        const textWidth = document.getElementById('text-width');
+        if (textWidth) settings.textWidth = textWidth.value;
+        
+        // Toggles
+        document.querySelectorAll('.toggle input').forEach(toggle => {
+            settings[toggle.id] = toggle.checked;
+        });
+        
+        // Sync URL
+        const syncUrl = document.getElementById('sync-url');
+        if (syncUrl) settings.syncUrl = syncUrl.value;
+        
+        // Sync interval
+        const syncInterval = document.getElementById('sync-interval');
+        if (syncInterval) settings.syncInterval = syncInterval.value;
+        
+        localStorage.setItem('franko-settings', JSON.stringify(settings));
+    }
+
+    function loadSettingsPage() {
+        const saved = localStorage.getItem('franko-settings');
+        if (!saved) return;
+        
+        try {
+            const settings = JSON.parse(saved);
+            
+            // Theme
+            if (settings.theme) {
+                document.querySelectorAll('.theme-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.theme === settings.theme);
+                });
+            }
+            
+            // Color
+            if (settings.accentColor) {
+                document.querySelectorAll('.color-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.color === settings.accentColor);
+                });
+                setAccentColor(settings.accentColor);
+            }
+            
+            // Font family
+            if (settings.fontFamily) {
+                const fontFamily = document.getElementById('font-family');
+                if (fontFamily) fontFamily.value = settings.fontFamily;
+            }
+            
+            // Font size
+            if (settings.fontSize) {
+                const fontSizeRange = document.getElementById('font-size-range');
+                if (fontSizeRange) fontSizeRange.value = settings.fontSize;
+                const display = document.querySelector('.font-size-display');
+                if (display) display.textContent = settings.fontSize + 'px';
+            }
+            
+            // Line height
+            if (settings.lineHeight) {
+                const lineHeight = document.getElementById('line-height');
+                if (lineHeight) lineHeight.value = settings.lineHeight;
+            }
+            
+            // Text width
+            if (settings.textWidth) {
+                const textWidth = document.getElementById('text-width');
+                if (textWidth) textWidth.value = settings.textWidth;
+            }
+            
+            // Toggles
+            document.querySelectorAll('.toggle input').forEach(toggle => {
+                if (settings[toggle.id] !== undefined) {
+                    toggle.checked = settings[toggle.id];
+                }
+            });
+            
+            // Sync URL
+            if (settings.syncUrl) {
+                const syncUrl = document.getElementById('sync-url');
+                if (syncUrl) syncUrl.value = settings.syncUrl;
+            }
+            
+            // Sync interval
+            if (settings.syncInterval) {
+                const syncInterval = document.getElementById('sync-interval');
+                if (syncInterval) syncInterval.value = settings.syncInterval;
+            }
+        } catch (e) {
+            console.error('Failed to load settings', e);
+        }
+    }
+
+    function resetSettings() {
+        localStorage.removeItem('franko-settings');
+        document.documentElement.removeAttribute('style');
+        document.documentElement.classList.remove('light');
+        document.documentElement.classList.add('dark');
+    }
+
+    function exportSettings() {
+        const settings = localStorage.getItem('franko-settings') || '{}';
+        const blob = new Blob([settings], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'franko-settings.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('Settings exported');
+    }
+
+    function importSettings(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const settings = JSON.parse(e.target.result);
+                localStorage.setItem('franko-settings', JSON.stringify(settings));
+                showToast('Settings imported');
+                location.reload();
+            } catch (err) {
+                showToast('Invalid settings file');
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function formatSettingName(name) {
+        return name
+            .replace(/-/g, ' ')
+            .replace(/([A-Z])/g, ' $1')
+            .replace(/^./, str => str.toUpperCase())
+            .trim();
+    }
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            init();
+            initSettingsPage();
+        });
+    } else {
+        init();
+        initSettingsPage();
+    }
+
+    // Load reading progress after a short delay
+    setTimeout(loadProgress, 100);
+})();

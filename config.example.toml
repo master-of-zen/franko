@@ -1,0 +1,299 @@
+# Franko Configuration File
+# The ultimate book reader for power users
+#
+# Location: ~/.config/franko/config.toml (Linux/macOS)
+#           %APPDATA%\franko\config.toml (Windows)
+#
+# Environment variable overrides use FRANKO_ prefix:
+#   FRANKO_READER_FONT_SIZE=18
+#   FRANKO_TUI_THEME=dracula
+
+# =============================================================================
+# Reader Settings
+# =============================================================================
+[reader]
+# Font size for text display (TUI: character scaling, Web: CSS font-size)
+font_size = 16
+
+# Line spacing multiplier (1.0 = normal, 1.5 = 150% spacing)
+line_spacing = 1.4
+
+# Maximum text width in characters (0 = full width)
+text_width = 80
+
+# Show reading progress indicator
+show_progress = true
+
+# Automatically save reading position on exit
+auto_save_position = true
+
+# Number of lines to scroll with j/k or arrow keys
+scroll_lines = 3
+
+# Pages to scroll with Ctrl+d/u or Page Up/Down
+scroll_pages = 0.5
+
+# Enable paragraph indentation
+paragraph_indent = true
+
+# Justify text (where supported)
+justify_text = false
+
+# Default interface to use when none specified
+# Options: "tui", "web"
+prefer_interface = "tui"
+
+# =============================================================================
+# Library Settings
+# =============================================================================
+[library]
+# Path to the SQLite library database
+# Supports ~ for home directory
+path = "~/.local/share/franko/library.db"
+
+# Automatically add opened books to library
+auto_add_opened = true
+
+# Track time spent reading
+track_reading_time = true
+
+# Default tags for new books (comma-separated)
+default_tags = []
+
+# Scan these directories for books on startup
+# watch_directories = ["~/Books", "~/Documents/ebooks"]
+
+# Supported file extensions
+extensions = ["epub", "pdf", "md", "markdown", "txt", "html"]
+
+# =============================================================================
+# TUI Settings
+# =============================================================================
+[tui]
+# Show the sidebar (table of contents) by default
+show_sidebar = false
+
+# Sidebar width (in characters)
+sidebar_width = 30
+
+# Show the status bar at the bottom
+show_status_bar = true
+
+# Show line numbers
+show_line_numbers = false
+
+# Enable mouse support
+mouse_support = true
+
+# Enable Unicode rendering (disable for ASCII-only terminals)
+unicode = true
+
+# Animation speed (ms, 0 = disabled)
+animation_speed = 50
+
+# Theme name (see [theme.tui] section for options)
+# Built-in: tokyo-night, solarized-dark, solarized-light, dracula, nord, gruvbox
+theme = "tokyo-night"
+
+# Cursor style: "block", "underline", "bar"
+cursor_style = "block"
+
+# =============================================================================
+# Web Settings
+# =============================================================================
+[web]
+# Port to listen on
+port = 8080
+
+# Address to bind to
+bind = "127.0.0.1"
+
+# Open browser automatically when starting web server
+open_browser = true
+
+# Theme: "light", "dark", "auto" (follows system preference)
+theme = "auto"
+
+# Enable hot reload of static files (development)
+hot_reload = false
+
+# Session timeout in minutes (0 = never)
+session_timeout = 0
+
+# CORS settings (for API access)
+cors_origins = ["*"]
+
+# =============================================================================
+# Keybindings
+# =============================================================================
+[keybindings]
+# Preset to use: "vim", "emacs", "custom"
+# Use "custom" to define your own mappings below
+preset = "vim"
+
+# Custom keybindings (only used when preset = "custom")
+# These override the preset mappings
+[keybindings.custom]
+# Navigation
+scroll_down = "j"
+scroll_up = "k"
+scroll_left = "h"
+scroll_right = "l"
+page_down = "ctrl+d"
+page_up = "ctrl+u"
+half_page_down = "ctrl+f"
+half_page_up = "ctrl+b"
+goto_top = "gg"
+goto_bottom = "G"
+goto_line = ":"
+
+# Chapter navigation
+next_chapter = "n"
+prev_chapter = "p"
+goto_chapter = "g"
+
+# Search
+search = "/"
+search_next = "n"
+search_prev = "N"
+clear_search = "escape"
+
+# Bookmarks
+bookmark_add = "m"
+bookmark_list = "'"
+bookmark_delete = "d"
+
+# UI toggles
+toggle_sidebar = "tab"
+toggle_toc = "t"
+toggle_help = "?"
+toggle_status = "ctrl+s"
+
+# Application
+quit = "q"
+force_quit = "Q"
+save = "ctrl+w"
+reload = "r"
+
+# =============================================================================
+# Themes
+# =============================================================================
+
+# TUI Themes
+[theme.tui.tokyo-night]
+background = "#1a1b26"
+foreground = "#a9b1d6"
+cursor = "#c0caf5"
+selection = "#33467c"
+accent = "#7aa2f7"
+error = "#f7768e"
+warning = "#e0af68"
+success = "#9ece6a"
+info = "#7dcfff"
+# Text styles
+heading = "#bb9af7"
+emphasis = "#7aa2f7"
+strong = "#c0caf5"
+code = "#9ece6a"
+link = "#7dcfff"
+quote = "#565f89"
+
+[theme.tui.dracula]
+background = "#282a36"
+foreground = "#f8f8f2"
+cursor = "#f8f8f2"
+selection = "#44475a"
+accent = "#bd93f9"
+error = "#ff5555"
+warning = "#ffb86c"
+success = "#50fa7b"
+info = "#8be9fd"
+heading = "#ff79c6"
+emphasis = "#bd93f9"
+strong = "#f8f8f2"
+code = "#50fa7b"
+link = "#8be9fd"
+quote = "#6272a4"
+
+[theme.tui.nord]
+background = "#2e3440"
+foreground = "#eceff4"
+cursor = "#d8dee9"
+selection = "#434c5e"
+accent = "#88c0d0"
+error = "#bf616a"
+warning = "#ebcb8b"
+success = "#a3be8c"
+info = "#81a1c1"
+heading = "#b48ead"
+emphasis = "#88c0d0"
+strong = "#eceff4"
+code = "#a3be8c"
+link = "#81a1c1"
+quote = "#4c566a"
+
+# Web Themes
+[theme.web.light]
+background = "#ffffff"
+foreground = "#24292e"
+accent = "#0366d6"
+sidebar = "#f6f8fa"
+card = "#ffffff"
+border = "#e1e4e8"
+# Button colors
+button_primary = "#2ea44f"
+button_secondary = "#fafbfc"
+
+[theme.web.dark]
+background = "#0d1117"
+foreground = "#c9d1d9"
+accent = "#58a6ff"
+sidebar = "#161b22"
+card = "#21262d"
+border = "#30363d"
+button_primary = "#238636"
+button_secondary = "#21262d"
+
+# =============================================================================
+# Search Settings
+# =============================================================================
+[search]
+# Enable full-text search (requires 'search' feature)
+enabled = true
+
+# Index location (for persistent index)
+index_path = "~/.local/share/franko/search_index"
+
+# Maximum search results
+max_results = 100
+
+# Context lines to show around matches
+context_lines = 2
+
+# Highlight matches in results
+highlight = true
+
+# Case-sensitive search by default
+case_sensitive = false
+
+# =============================================================================
+# Advanced Settings
+# =============================================================================
+[advanced]
+# Enable debug logging
+debug = false
+
+# Cache directory for parsed books
+cache_dir = "~/.cache/franko"
+
+# Maximum cache size in MB (0 = unlimited)
+cache_max_size = 500
+
+# Parallel parsing threads (0 = auto)
+parse_threads = 0
+
+# Enable experimental features
+experimental = false
+
+# Plugin directory
+plugins_dir = "~/.config/franko/plugins"
