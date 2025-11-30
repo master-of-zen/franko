@@ -36,6 +36,17 @@
     let pageAnimation = 'slide';
     let originalContent = '';
     let dualPages = null; // For dual page mode content storage
+    let currentChapter = 0; // Track current chapter based on scroll
+
+    // Reading settings state
+    let readingSettings = {
+        fontSize: 18,
+        lineHeight: 1.8,
+        textWidth: 'medium',
+        fontFamily: 'serif',
+        theme: 'dark',
+        paraSpacing: 1
+    };
 
     // Initialize
     function init() {
@@ -45,11 +56,340 @@
         initAnimations();
         initSearch();
         initLayoutControls();
+        initChapterTracking();
+        initTocNavigation();
+        initSettingsPanel();
 
         // Store original content for paged mode
         if (content) {
             originalContent = content.innerHTML;
         }
+    }
+
+    // ========== Settings Panel ==========
+    function initSettingsPanel() {
+        const settingsPanel = document.getElementById('settings-panel');
+        const toggleBtn = document.getElementById('toggle-settings');
+        const closeBtn = document.getElementById('close-settings');
+        
+        if (!settingsPanel) return;
+
+        // Toggle settings panel
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', toggleSettingsPanel);
+        }
+        if (closeBtn) {
+            closeBtn.addEventListener('click', toggleSettingsPanel);
+        }
+
+        // Font size controls
+        document.getElementById('font-decrease')?.addEventListener('click', () => {
+            adjustSetting('fontSize', -1, 12, 32);
+        });
+        document.getElementById('font-increase')?.addEventListener('click', () => {
+            adjustSetting('fontSize', 1, 12, 32);
+        });
+
+        // Line height controls
+        document.getElementById('line-height-decrease')?.addEventListener('click', () => {
+            adjustSetting('lineHeight', -0.1, 1.2, 2.5);
+        });
+        document.getElementById('line-height-increase')?.addEventListener('click', () => {
+            adjustSetting('lineHeight', 0.1, 1.2, 2.5);
+        });
+
+        // Paragraph spacing controls
+        document.getElementById('para-spacing-decrease')?.addEventListener('click', () => {
+            adjustSetting('paraSpacing', -0.25, 0, 3);
+        });
+        document.getElementById('para-spacing-increase')?.addEventListener('click', () => {
+            adjustSetting('paraSpacing', 0.25, 0, 3);
+        });
+
+        // Text width buttons
+        document.querySelectorAll('[data-width]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                setTextWidth(btn.dataset.width);
+                document.querySelectorAll('[data-width]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+
+        // Font family select
+        document.getElementById('font-family-select')?.addEventListener('change', (e) => {
+            setFontFamily(e.target.value);
+        });
+
+        // Theme buttons
+        document.querySelectorAll('[data-theme]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                setReaderTheme(btn.dataset.theme);
+                document.querySelectorAll('[data-theme]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+
+        // Load saved settings
+        loadReadingSettings();
+    }
+
+    function toggleSettingsPanel() {
+        const panel = document.getElementById('settings-panel');
+        if (panel) {
+            panel.classList.toggle('open');
+            
+            // Handle overlay
+            let overlay = document.querySelector('.settings-overlay');
+            if (panel.classList.contains('open')) {
+                if (!overlay) {
+                    overlay = document.createElement('div');
+                    overlay.className = 'settings-overlay';
+                    overlay.addEventListener('click', toggleSettingsPanel);
+                    document.body.appendChild(overlay);
+                }
+                setTimeout(() => overlay.classList.add('active'), 10);
+            } else if (overlay) {
+                overlay.classList.remove('active');
+                setTimeout(() => overlay.remove(), 300);
+            }
+        }
+    }
+
+    // Get reading position relative to content
+    function getReadingPosition() {
+        const contentEl = document.getElementById('content');
+        if (!contentEl) return null;
+
+        const scrollTop = window.scrollY;
+        const viewportHeight = window.innerHeight;
+        const viewportCenter = scrollTop + viewportHeight / 3; // Use top third of viewport
+
+        // Find the element at the reading position
+        const paragraphs = contentEl.querySelectorAll('p, h1, h2, h3, h4, h5, h6');
+        let closestElement = null;
+        let closestDistance = Infinity;
+
+        paragraphs.forEach((el, index) => {
+            const rect = el.getBoundingClientRect();
+            const elementTop = rect.top + scrollTop;
+            const distance = Math.abs(elementTop - viewportCenter);
+            
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestElement = { element: el, index: index, offsetRatio: (viewportCenter - elementTop) / rect.height };
+            }
+        });
+
+        return closestElement;
+    }
+
+    // Restore reading position after settings change
+    function restoreReadingPosition(position) {
+        if (!position) return;
+
+        const contentEl = document.getElementById('content');
+        if (!contentEl) return;
+
+        const paragraphs = contentEl.querySelectorAll('p, h1, h2, h3, h4, h5, h6');
+        const targetEl = paragraphs[position.index];
+        
+        if (targetEl) {
+            const rect = targetEl.getBoundingClientRect();
+            const elementTop = rect.top + window.scrollY;
+            const viewportHeight = window.innerHeight;
+            const targetScroll = elementTop - viewportHeight / 3 + (rect.height * position.offsetRatio);
+            
+            window.scrollTo(0, Math.max(0, targetScroll));
+        }
+    }
+
+    function adjustSetting(setting, delta, min, max) {
+        const position = getReadingPosition();
+        
+        readingSettings[setting] = Math.max(min, Math.min(max, readingSettings[setting] + delta));
+        applySettings();
+        updateSettingsDisplay();
+        saveReadingSettings();
+
+        // Restore position after layout reflow
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                restoreReadingPosition(position);
+            });
+        });
+    }
+
+    function setTextWidth(width) {
+        const position = getReadingPosition();
+        
+        readingSettings.textWidth = width;
+        applySettings();
+        saveReadingSettings();
+
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                restoreReadingPosition(position);
+            });
+        });
+    }
+
+    function setFontFamily(family) {
+        const position = getReadingPosition();
+        
+        readingSettings.fontFamily = family;
+        applySettings();
+        saveReadingSettings();
+
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                restoreReadingPosition(position);
+            });
+        });
+    }
+
+    function setReaderTheme(theme) {
+        readingSettings.theme = theme;
+        applySettings();
+        saveReadingSettings();
+    }
+
+    function applySettings() {
+        const root = document.documentElement;
+        
+        // Font size
+        root.style.setProperty('--font-size', readingSettings.fontSize + 'px');
+        
+        // Line height
+        root.style.setProperty('--line-height', readingSettings.lineHeight);
+        
+        // Paragraph spacing
+        root.style.setProperty('--para-spacing', readingSettings.paraSpacing + 'em');
+        
+        // Text width
+        const widths = { narrow: '600px', medium: '800px', wide: '1000px' };
+        root.style.setProperty('--text-width', widths[readingSettings.textWidth] || '800px');
+        
+        // Font family
+        const fonts = {
+            serif: 'Georgia, Cambria, "Times New Roman", Times, serif',
+            sans: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            mono: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace'
+        };
+        root.style.setProperty('--font-family-reading', fonts[readingSettings.fontFamily] || fonts.serif);
+        
+        // Theme
+        root.classList.remove('light', 'dark', 'sepia');
+        root.classList.add(readingSettings.theme);
+    }
+
+    function updateSettingsDisplay() {
+        const fontSizeEl = document.getElementById('font-size-value');
+        const lineHeightEl = document.getElementById('line-height-value');
+        const paraSpacingEl = document.getElementById('para-spacing-value');
+        
+        if (fontSizeEl) fontSizeEl.textContent = readingSettings.fontSize + 'px';
+        if (lineHeightEl) lineHeightEl.textContent = readingSettings.lineHeight.toFixed(1);
+        if (paraSpacingEl) paraSpacingEl.textContent = readingSettings.paraSpacing + 'em';
+        
+        // Update font family select
+        const fontSelect = document.getElementById('font-family-select');
+        if (fontSelect) fontSelect.value = readingSettings.fontFamily;
+        
+        // Update active buttons
+        document.querySelectorAll('[data-width]').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.width === readingSettings.textWidth);
+        });
+        document.querySelectorAll('[data-theme]').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.theme === readingSettings.theme);
+        });
+    }
+
+    function saveReadingSettings() {
+        localStorage.setItem('franko-reading-settings', JSON.stringify(readingSettings));
+    }
+
+    function loadReadingSettings() {
+        const saved = localStorage.getItem('franko-reading-settings');
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                readingSettings = { ...readingSettings, ...parsed };
+            } catch (e) {
+                console.error('Failed to load reading settings', e);
+            }
+        }
+        applySettings();
+        updateSettingsDisplay();
+    }
+
+    // Chapter tracking based on scroll position
+    function initChapterTracking() {
+        const chapters = document.querySelectorAll('.chapter');
+        if (chapters.length === 0) return;
+
+        const updateCurrentChapter = throttle(() => {
+            const scrollTop = window.scrollY + 100; // Offset for header
+            let newChapter = 0;
+
+            chapters.forEach((chapter, index) => {
+                if (chapter.offsetTop <= scrollTop) {
+                    newChapter = index;
+                }
+            });
+
+            if (newChapter !== currentChapter) {
+                currentChapter = newChapter;
+                updateChapterIndicator();
+                updateTocHighlight();
+            }
+        }, 100);
+
+        window.addEventListener('scroll', updateCurrentChapter);
+        updateCurrentChapter(); // Initial call
+    }
+
+    // Update chapter indicator in footer
+    function updateChapterIndicator() {
+        const indicator = document.getElementById('current-chapter-indicator');
+        const chapters = document.querySelectorAll('.chapter');
+        if (indicator && chapters.length > 0) {
+            const chapter = chapters[currentChapter];
+            const title = chapter.querySelector('.chapter-title');
+            const titleText = title ? title.textContent : `Chapter ${currentChapter + 1}`;
+            indicator.textContent = `${titleText} (${currentChapter + 1}/${chapters.length})`;
+        }
+    }
+
+    // Update TOC highlight
+    function updateTocHighlight() {
+        const tocLinks = document.querySelectorAll('.toc a');
+        tocLinks.forEach((link, index) => {
+            const li = link.parentElement;
+            if (index === currentChapter) {
+                li.classList.add('active');
+            } else {
+                li.classList.remove('active');
+            }
+        });
+    }
+
+    // TOC navigation with smooth scroll
+    function initTocNavigation() {
+        const tocLinks = document.querySelectorAll('.toc a');
+        tocLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const chapterIndex = parseInt(link.dataset.chapter);
+                const chapter = document.getElementById(`chapter-${chapterIndex}`);
+                if (chapter) {
+                    chapter.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    // Close sidebar on mobile
+                    if (sidebar && sidebar.classList.contains('open')) {
+                        toggleSidebar();
+                    }
+                }
+            });
+        });
     }
 
     // Event Listeners
@@ -774,9 +1114,16 @@
                 e.preventDefault();
                 openSearch();
                 break;
+            case 's':
+                toggleSettingsPanel();
+                break;
             case 'Escape':
                 if (sidebar && sidebar.classList.contains('open')) {
                     toggleSidebar();
+                }
+                const settingsPanel = document.getElementById('settings-panel');
+                if (settingsPanel && settingsPanel.classList.contains('open')) {
+                    toggleSettingsPanel();
                 }
                 stopAutoScroll();
                 break;
@@ -926,11 +1273,10 @@
         if (!bookId) return;
 
         const scrollPosition = window.scrollY;
-        const chapter = getCurrentChapter();
 
         const progress = {
             scroll: scrollPosition,
-            chapter: chapter,
+            chapter: currentChapter,
             timestamp: Date.now()
         };
 
@@ -943,7 +1289,7 @@
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                chapter: chapter,
+                chapter: currentChapter,
                 block: 0,
                 scroll_offset: scrollPosition
             })
@@ -953,6 +1299,33 @@
     }
 
     function loadProgress() {
+        const bookId = getBookId();
+        if (!bookId) return;
+
+        // Try to load from server first, fall back to localStorage
+        fetch(`/api/books/${bookId}/progress`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.data) {
+                    const serverProgress = data.data;
+                    // Restore scroll position
+                    if (serverProgress.scroll_offset) {
+                        setTimeout(() => {
+                            window.scrollTo(0, serverProgress.scroll_offset);
+                        }, 100);
+                    }
+                } else {
+                    // Fall back to localStorage
+                    loadProgressFromLocalStorage();
+                }
+            })
+            .catch(() => {
+                // Fall back to localStorage on error
+                loadProgressFromLocalStorage();
+            });
+    }
+
+    function loadProgressFromLocalStorage() {
         const bookId = getBookId();
         if (!bookId) return;
 
@@ -975,8 +1348,7 @@
     }
 
     function getCurrentChapter() {
-        const params = new URLSearchParams(window.location.search);
-        return parseInt(params.get('chapter')) || 0;
+        return currentChapter;
     }
 
     // Auto-save progress periodically

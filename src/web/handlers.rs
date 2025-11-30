@@ -31,9 +31,8 @@ pub async fn library(State(state): State<Arc<AppState>>) -> Html<String> {
 pub async fn reader(
     State(state): State<Arc<AppState>>,
     Path(id): Path<String>,
-    Query(query): Query<ReaderQuery>,
+    Query(_query): Query<ReaderQuery>,
 ) -> Html<String> {
-    let chapter_index = query.chapter.unwrap_or(0);
     let library = state.library.read().await;
 
     match library.get_book(&id) {
@@ -42,9 +41,9 @@ pub async fn reader(
             if entry.format == "pdf" {
                 return Html(templates::pdf_reader(&state.config, &entry.id, &entry.metadata.title));
             }
-            
+
             match crate::formats::parse_book(&entry.path) {
-                Ok(book) => Html(templates::reader(&state.config, &book, chapter_index)),
+                Ok(book) => Html(templates::reader(&state.config, &book, 0)),
                 Err(e) => Html(templates::error(&format!("Failed to parse book: {}", e))),
             }
         }

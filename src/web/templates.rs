@@ -375,52 +375,34 @@ pub fn library(config: &Config, books: &[LibraryEntry]) -> String {
     base("Library", &content, config)
 }
 
-pub fn reader(config: &Config, book: &Book, chapter_index: usize) -> String {
-    let chapter = book.content.chapters.get(chapter_index);
+pub fn reader(config: &Config, book: &Book, _chapter_index: usize) -> String {
+    // Build continuous content from all chapters with markers
+    let mut book_content = String::new();
+    for (i, chapter) in book.content.chapters.iter().enumerate() {
+        // Add chapter marker/anchor
+        book_content.push_str(&format!(
+            r#"<section class="chapter" id="chapter-{}" data-chapter="{}">"#,
+            i, i
+        ));
+        book_content.push_str(&chapter_to_html(chapter));
+        book_content.push_str("</section>\n");
+    }
 
-    let chapter_content = if let Some(ch) = chapter {
-        chapter_to_html(ch)
-    } else {
-        "<p>Chapter not found</p>".to_string()
-    };
-
+    // Build TOC with anchor links
     let toc_items: String = book
         .content
         .chapters
         .iter()
         .enumerate()
         .map(|(i, ch)| {
-            let active = if i == chapter_index {
-                " class=\"active\""
-            } else {
-                ""
-            };
             format!(
-                r#"<li{active}><a href="?chapter={i}">{title}</a></li>"#,
-                active = active,
-                i = i,
-                title = escape_html(&ch.display_title()),
+                "<li><a href=\"#chapter-{}\" data-chapter=\"{}\">{}</a></li>",
+                i,
+                i,
+                escape_html(&ch.display_title()),
             )
         })
         .collect();
-
-    let prev_link = if chapter_index > 0 {
-        format!(
-            r#"<a href="?chapter={}" class="nav-prev">← Previous</a>"#,
-            chapter_index - 1
-        )
-    } else {
-        String::new()
-    };
-
-    let next_link = if chapter_index < book.content.chapters.len() - 1 {
-        format!(
-            r#"<a href="?chapter={}" class="nav-next">Next →</a>"#,
-            chapter_index + 1
-        )
-    } else {
-        String::new()
-    };
 
     let content = format!(
         r#"
@@ -436,26 +418,90 @@ pub fn reader(config: &Config, book: &Book, chapter_index: usize) -> String {
                     </ul>
                 </nav>
             </aside>
+            
+            <!-- Settings Panel -->
+            <aside class="reader-settings-panel" id="settings-panel">
+                <div class="settings-panel-header">
+                    <h3>Reading Settings</h3>
+                    <button id="close-settings" class="btn-icon">×</button>
+                </div>
+                <div class="settings-panel-content">
+                    <!-- Font Size -->
+                    <div class="setting-group">
+                        <label>Font Size</label>
+                        <div class="setting-control">
+                            <button id="font-decrease" class="btn-icon">−</button>
+                            <span id="font-size-value">18px</span>
+                            <button id="font-increase" class="btn-icon">+</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Line Height -->
+                    <div class="setting-group">
+                        <label>Line Height</label>
+                        <div class="setting-control">
+                            <button id="line-height-decrease" class="btn-icon">−</button>
+                            <span id="line-height-value">1.8</span>
+                            <button id="line-height-increase" class="btn-icon">+</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Text Width -->
+                    <div class="setting-group">
+                        <label>Text Width</label>
+                        <div class="setting-buttons">
+                            <button class="setting-btn" data-width="narrow">Narrow</button>
+                            <button class="setting-btn active" data-width="medium">Medium</button>
+                            <button class="setting-btn" data-width="wide">Wide</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Font Family -->
+                    <div class="setting-group">
+                        <label>Font</label>
+                        <select id="font-family-select">
+                            <option value="serif">Serif (Georgia)</option>
+                            <option value="sans">Sans-serif (System)</option>
+                            <option value="mono">Monospace</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Theme -->
+                    <div class="setting-group">
+                        <label>Theme</label>
+                        <div class="setting-buttons theme-buttons">
+                            <button class="setting-btn theme-btn-light" data-theme="light">Light</button>
+                            <button class="setting-btn theme-btn-dark active" data-theme="dark">Dark</button>
+                            <button class="setting-btn theme-btn-sepia" data-theme="sepia">Sepia</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Paragraph Spacing -->
+                    <div class="setting-group">
+                        <label>Paragraph Spacing</label>
+                        <div class="setting-control">
+                            <button id="para-spacing-decrease" class="btn-icon">−</button>
+                            <span id="para-spacing-value">1em</span>
+                            <button id="para-spacing-increase" class="btn-icon">+</button>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+            
             <main class="reader-main">
                 <header class="reader-header">
                     <a href="/library" class="btn-icon" data-tooltip="Back to Library" title="Back to Library">←</a>
                     <button id="toggle-sidebar" class="btn-icon" data-tooltip="Table of Contents">☰</button>
                     <h1>{title}</h1>
                     <div class="reader-controls">
-                        <div class="layout-switcher" data-tooltip="Reading Layout">
-                            <button id="layout-scroll" class="btn-icon layout-btn active" data-layout="scroll" title="Continuous Scroll">📜</button>
-                            <button id="layout-paged" class="btn-icon layout-btn" data-layout="paged" title="Paged View">📄</button>
-                            <button id="layout-dual" class="btn-icon layout-btn" data-layout="dual" title="Dual Page">📖</button>
-                        </div>
-                        <button id="decrease-font" class="btn-icon" data-tooltip="Decrease Font">A-</button>
-                        <button id="increase-font" class="btn-icon" data-tooltip="Increase Font">A+</button>
+                        <button id="toggle-settings" class="btn-icon" data-tooltip="Reading Settings" title="Settings">⚙</button>
                         <button id="toggle-theme" class="btn-icon" data-tooltip="Toggle Theme">🌓</button>
                         <button id="toggle-fullscreen" class="btn-icon" data-tooltip="Fullscreen">⛶</button>
                     </div>
                 </header>
-                <div class="reader-container" id="reader-container" data-layout="scroll">
+                <div class="reader-container" id="reader-container" data-layout="scroll" data-book-id="{book_id}">
                     <article class="reader-content" id="content">
-                        {chapter_content}
+                        {book_content}
                     </article>
                 </div>
                 <div class="page-controls" id="page-controls" style="display: none;">
@@ -463,10 +509,8 @@ pub fn reader(config: &Config, book: &Book, chapter_index: usize) -> String {
                     <span class="page-indicator" id="page-indicator">Page 1</span>
                     <button id="page-next" class="btn-icon page-nav">→</button>
                 </div>
-                <nav class="chapter-nav">
-                    {prev_link}
-                    <span class="chapter-indicator">Chapter {chapter_num} of {total_chapters}</span>
-                    {next_link}
+                <nav class="chapter-nav" id="chapter-nav">
+                    <span class="chapter-indicator" id="current-chapter-indicator"></span>
                 </nav>
             </main>
         </div>
@@ -476,11 +520,10 @@ pub fn reader(config: &Config, book: &Book, chapter_index: usize) -> String {
     "#,
         toc_items = toc_items,
         title = escape_html(&book.metadata.title),
-        chapter_content = chapter_content,
-        prev_link = prev_link,
-        next_link = next_link,
-        chapter_num = chapter_index + 1,
-        total_chapters = book.content.chapters.len(),
+        book_content = book_content,
+        book_id = book.source_path.file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("unknown"),
     );
 
     base(&book.metadata.title, &content, config)
@@ -523,15 +566,15 @@ pub fn pdf_reader(config: &Config, book_id: &str, title: &str) -> String {
                 </div>
             </div>
         </div>
-        
+
         <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
         <script>
         (function() {{
             'use strict';
-            
+
             // PDF.js worker
             pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-            
+
             // State
             let pdfDoc = null;
             let pageNum = 1;
@@ -539,7 +582,7 @@ pub fn pdf_reader(config: &Config, book_id: &str, title: &str) -> String {
             let pageNumPending = null;
             let scale = 1.0;
             let fitMode = 'width'; // 'width', 'page', 'custom'
-            
+
             // Elements
             const canvas = document.getElementById('pdf-canvas');
             const ctx = canvas.getContext('2d');
@@ -549,38 +592,54 @@ pub fn pdf_reader(config: &Config, book_id: &str, title: &str) -> String {
             const pageInput = document.getElementById('pdf-page-input');
             const pageCount = document.getElementById('pdf-page-count');
             const zoomLevel = document.getElementById('pdf-zoom-level');
-            
+
             // Load PDF
             const url = '/api/books/{book_id}/pdf';
-            
+
             pdfjsLib.getDocument(url).promise.then(function(pdf) {{
                 pdfDoc = pdf;
                 pageCount.textContent = pdf.numPages;
                 pageInput.max = pdf.numPages;
                 loading.style.display = 'none';
-                
-                // Load saved page
-                const savedPage = localStorage.getItem('pdf-page-{book_id}');
-                if (savedPage) {{
-                    pageNum = Math.min(parseInt(savedPage), pdf.numPages);
-                    pageInput.value = pageNum;
-                }}
-                
-                renderPage(pageNum);
+
+                // Load saved page from server first, fallback to localStorage
+                fetch('/api/books/{book_id}/progress')
+                    .then(function(r) {{ return r.json(); }})
+                    .then(function(data) {{
+                        if (data.success && data.data && data.data.chapter) {{
+                            pageNum = Math.min(data.data.chapter, pdf.numPages);
+                            pageInput.value = pageNum;
+                        }} else {{
+                            const savedPage = localStorage.getItem('pdf-page-{book_id}');
+                            if (savedPage) {{
+                                pageNum = Math.min(parseInt(savedPage), pdf.numPages);
+                                pageInput.value = pageNum;
+                            }}
+                        }}
+                        renderPage(pageNum);
+                    }})
+                    .catch(function() {{
+                        const savedPage = localStorage.getItem('pdf-page-{book_id}');
+                        if (savedPage) {{
+                            pageNum = Math.min(parseInt(savedPage), pdf.numPages);
+                            pageInput.value = pageNum;
+                        }}
+                        renderPage(pageNum);
+                    }});
             }}).catch(function(error) {{
                 loading.innerHTML = '<p class="error">Failed to load PDF: ' + error.message + '</p>';
             }});
-            
+
             // Render page
             function renderPage(num) {{
                 pageRendering = true;
-                
+
                 pdfDoc.getPage(num).then(function(page) {{
                     // Calculate scale based on fit mode
                     const containerWidth = container.clientWidth - 40;
                     const containerHeight = container.clientHeight - 40;
                     const viewport = page.getViewport({{ scale: 1 }});
-                    
+
                     if (fitMode === 'width') {{
                         scale = containerWidth / viewport.width;
                     }} else if (fitMode === 'page') {{
@@ -588,37 +647,42 @@ pub fn pdf_reader(config: &Config, book_id: &str, title: &str) -> String {
                         const scaleY = containerHeight / viewport.height;
                         scale = Math.min(scaleX, scaleY);
                     }}
-                    
+
                     const scaledViewport = page.getViewport({{ scale: scale }});
-                    
+
                     // Set canvas dimensions
                     canvas.height = scaledViewport.height;
                     canvas.width = scaledViewport.width;
-                    
+
                     // Render
                     const renderContext = {{
                         canvasContext: ctx,
                         viewport: scaledViewport
                     }};
-                    
+
                     page.render(renderContext).promise.then(function() {{
                         pageRendering = false;
-                        
+
                         if (pageNumPending !== null) {{
                             renderPage(pageNumPending);
                             pageNumPending = null;
                         }}
                     }});
                 }});
-                
+
                 // Update UI
                 pageInput.value = num;
                 zoomLevel.textContent = Math.round(scale * 100) + '%';
-                
-                // Save progress
+
+                // Save progress to localStorage and server
                 localStorage.setItem('pdf-page-{book_id}', num);
+                fetch('/api/books/{book_id}/progress', {{
+                    method: 'POST',
+                    headers: {{ 'Content-Type': 'application/json' }},
+                    body: JSON.stringify({{ chapter: num, block: 0, scroll_offset: 0 }})
+                }}).catch(function() {{}});
             }}
-            
+
             // Queue page render
             function queueRenderPage(num) {{
                 if (pageRendering) {{
@@ -627,21 +691,21 @@ pub fn pdf_reader(config: &Config, book_id: &str, title: &str) -> String {
                     renderPage(num);
                 }}
             }}
-            
+
             // Previous page
             document.getElementById('pdf-prev').addEventListener('click', function() {{
                 if (pageNum <= 1) return;
                 pageNum--;
                 queueRenderPage(pageNum);
             }});
-            
+
             // Next page
             document.getElementById('pdf-next').addEventListener('click', function() {{
                 if (pageNum >= pdfDoc.numPages) return;
                 pageNum++;
                 queueRenderPage(pageNum);
             }});
-            
+
             // Page input
             pageInput.addEventListener('change', function() {{
                 const num = parseInt(pageInput.value);
@@ -652,30 +716,30 @@ pub fn pdf_reader(config: &Config, book_id: &str, title: &str) -> String {
                     pageInput.value = pageNum;
                 }}
             }});
-            
+
             // Zoom controls
             document.getElementById('pdf-zoom-in').addEventListener('click', function() {{
                 fitMode = 'custom';
                 scale = Math.min(scale * 1.25, 5);
                 queueRenderPage(pageNum);
             }});
-            
+
             document.getElementById('pdf-zoom-out').addEventListener('click', function() {{
                 fitMode = 'custom';
                 scale = Math.max(scale / 1.25, 0.25);
                 queueRenderPage(pageNum);
             }});
-            
+
             document.getElementById('pdf-fit-width').addEventListener('click', function() {{
                 fitMode = 'width';
                 queueRenderPage(pageNum);
             }});
-            
+
             document.getElementById('pdf-fit-page').addEventListener('click', function() {{
                 fitMode = 'page';
                 queueRenderPage(pageNum);
             }});
-            
+
             // Fullscreen
             document.getElementById('pdf-fullscreen').addEventListener('click', function() {{
                 const viewer = document.querySelector('.pdf-viewer-layout');
@@ -685,11 +749,11 @@ pub fn pdf_reader(config: &Config, book_id: &str, title: &str) -> String {
                     viewer.requestFullscreen();
                 }}
             }});
-            
+
             // Keyboard navigation
             document.addEventListener('keydown', function(e) {{
                 if (e.target.tagName === 'INPUT') return;
-                
+
                 switch(e.key) {{
                     case 'ArrowLeft':
                     case 'ArrowUp':
@@ -733,7 +797,7 @@ pub fn pdf_reader(config: &Config, book_id: &str, title: &str) -> String {
                         break;
                 }}
             }});
-            
+
             // Resize handler
             window.addEventListener('resize', function() {{
                 if (fitMode !== 'custom') {{

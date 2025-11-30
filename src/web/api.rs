@@ -252,12 +252,15 @@ async fn add_book(
                 progress: 0.0,
                 cover_url: None,
             };
-            
+
             // Save the library after adding the book
             if let Err(e) = library.save() {
-                return Json(ApiResponse::err(format!("Book added but failed to save library: {}", e)));
+                return Json(ApiResponse::err(format!(
+                    "Book added but failed to save library: {}",
+                    e
+                )));
             }
-            
+
             Json(ApiResponse::ok(summary))
         }
         Err(e) => Json(ApiResponse::err(e.to_string())),
@@ -570,7 +573,13 @@ async fn save_progress(
         progress.block,
         progress.scroll_offset,
     ) {
-        Ok(_) => Json(ApiResponse::ok(())),
+        Ok(_) => {
+            // Save library to persist the progress
+            if let Err(e) = library.save() {
+                return Json(ApiResponse::err(format!("Failed to save progress: {}", e)));
+            }
+            Json(ApiResponse::ok(()))
+        }
         Err(e) => Json(ApiResponse::err(e.to_string())),
     }
 }
