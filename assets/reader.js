@@ -35,6 +35,7 @@
     let pageGap = 40;
     let pageAnimation = 'slide';
     let originalContent = '';
+    let dualPages = null; // For dual page mode content storage
 
     // Initialize
     function init() {
@@ -173,8 +174,12 @@
         // Disable scrolling
         readerContainer.style.overflow = 'hidden';
 
-        // Paginate content
-        paginateContent();
+        // Paginate content based on layout
+        if (layout === 'dual') {
+            paginateDualMode();
+        } else {
+            paginateContent();
+        }
 
         // Update page indicator
         updatePageIndicator();
@@ -184,8 +189,17 @@
     function exitPagedMode() {
         if (!content || !readerContainer) return;
 
+        // Remove dual page containers if they exist
+        const dualContainer = readerContainer.querySelector('.dual-page-container');
+        if (dualContainer) {
+            dualContainer.remove();
+        }
+        readerContainer.classList.remove('dual-active');
+
         // Restore original content
         content.innerHTML = originalContent;
+        content.style.cssText = '';
+        content.style.display = '';
 
         // Re-enable scrolling
         readerContainer.style.overflow = '';
@@ -196,11 +210,110 @@
         totalPages = 1;
     }
 
-    // Paginate content for paged mode
+    // Paginate for dual page mode (two side-by-side pages)
+    function paginateDualMode() {
+        if (!content) return;
+
+        const containerHeight = readerContainer.clientHeight - 40;
+        const containerWidth = (readerContainer.clientWidth - pageGap) / 2;
+
+        // Hide original content
+        content.style.display = 'none';
+        readerContainer.classList.add('dual-active');
+
+        // Remove existing dual container if any
+        const existingDual = readerContainer.querySelector('.dual-page-container');
+        if (existingDual) {
+            existingDual.remove();
+        }
+
+        // Create dual page container
+        const dualContainer = document.createElement('div');
+        dualContainer.className = 'dual-page-container';
+
+        // Create left and right page divs
+        const leftPage = document.createElement('div');
+        leftPage.className = 'page-left';
+        const rightPage = document.createElement('div');
+        rightPage.className = 'page-right';
+
+        dualContainer.appendChild(leftPage);
+        dualContainer.appendChild(rightPage);
+        readerContainer.appendChild(dualContainer);
+
+        // Parse content into blocks
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = originalContent;
+        const blocks = Array.from(tempDiv.children);
+
+        // Calculate how much content fits per page
+        const pages = [];
+        let currentPageBlocks = [];
+        let currentHeight = 0;
+
+        const measureDiv = document.createElement('div');
+        measureDiv.style.cssText = `
+            position: absolute;
+            visibility: hidden;
+            width: ${containerWidth - 80}px;
+            font-family: var(--font-family-reading);
+            font-size: var(--font-size);
+            line-height: var(--line-height);
+            padding: 2.5rem;
+        `;
+        document.body.appendChild(measureDiv);
+
+        blocks.forEach(block => {
+            measureDiv.innerHTML = '';
+            const clonedBlock = block.cloneNode(true);
+            measureDiv.appendChild(clonedBlock);
+            const blockHeight = measureDiv.offsetHeight;
+
+            if (currentHeight + blockHeight > containerHeight && currentPageBlocks.length > 0) {
+                pages.push(currentPageBlocks);
+                currentPageBlocks = [];
+                currentHeight = 0;
+            }
+
+            currentPageBlocks.push(block.outerHTML);
+            currentHeight += blockHeight;
+        });
+
+        if (currentPageBlocks.length > 0) {
+            pages.push(currentPageBlocks);
+        }
+
+        document.body.removeChild(measureDiv);
+
+        // Store pages for navigation
+        dualPages = pages;
+        totalPages = Math.ceil(pages.length / 2);
+        currentPage = 0;
+
+        // Show first spread
+        showDualSpread(0);
+    }
+
+    // Show a spread (two pages) in dual mode
+    function showDualSpread(spreadIndex) {
+        const dualContainer = readerContainer.querySelector('.dual-page-container');
+        if (!dualContainer || !dualPages) return;
+
+        const leftPage = dualContainer.querySelector('.page-left');
+        const rightPage = dualContainer.querySelector('.page-right');
+
+        const leftIndex = spreadIndex * 2;
+        const rightIndex = spreadIndex * 2 + 1;
+
+        leftPage.innerHTML = dualPages[leftIndex] ? dualPages[leftIndex].join('') : '';
+        rightPage.innerHTML = dualPages[rightIndex] ? dualPages[rightIndex].join('') : '';
+    }
+
+    // Paginate content for single paged mode
     function paginateContent() {
         if (!content) return;
 
-        const containerHeight = readerContainer.clientHeight - 60; // Account for padding
+        const containerHeight = readerContainer.clientHeight - 60;
         const containerWidth = readerContainer.clientWidth;
 
         // Create a temporary container to measure content
@@ -208,7 +321,7 @@
         tempContainer.style.cssText = `
             position: absolute;
             visibility: hidden;
-            width: ${pagesPerView === 2 ? containerWidth / 2 - pageGap : containerWidth - 80}px;
+            width: ${containerWidth - 80}px;
             font-family: var(--font-family-reading);
             font-size: var(--font-size);
             line-height: var(--line-height);
@@ -226,7 +339,7 @@
         // Set up CSS columns for pagination
         content.style.cssText = `
             height: ${containerHeight}px;
-            column-count: ${totalPages * pagesPerView};
+            column-count: ${totalPages};
             column-gap: ${pageGap}px;
             column-fill: auto;
             overflow: hidden;
@@ -238,24 +351,34 @@
 
     // Recalculate pages on resize
     function recalculatePages() {
-        if (currentLayout !== 'scroll') {
+        if (currentLayout === 'dual') {
+            paginateDualMode();
+        } else if (currentLayout !== 'scroll') {
             paginateContent();
         }
     }
 
     // Go to specific page
     function goToPage(pageNum) {
+        if (currentLayout === 'dual') {
+            pageNum = Math.max(0, Math.min(pageNum, totalPages - 1));
+            currentPage = pageNum;
+            showDualSpread(pageNum);
+            updatePageIndicator();
+            updatePageButtons();
+            saveSetting('currentPage', currentPage);
+            return;
+        }
+
         if (!content) return;
 
         pageNum = Math.max(0, Math.min(pageNum, totalPages - 1));
         currentPage = pageNum;
 
         const containerWidth = readerContainer.clientWidth;
-        const pageWidth = pagesPerView === 2
-            ? (containerWidth / 2 + pageGap / 2)
-            : (containerWidth - 40);
+        const pageWidth = containerWidth - 40;
 
-        const offset = pageNum * pageWidth * pagesPerView;
+        const offset = pageNum * pageWidth;
 
         // Apply animation class
         content.classList.remove('page-animation-slide', 'page-animation-fade', 'page-animation-flip');
@@ -290,11 +413,17 @@
     // Update page indicator
     function updatePageIndicator() {
         if (pageIndicator) {
-            const displayPage = currentPage + 1;
-            if (pagesPerView === 2 && totalPages > 1) {
-                const endPage = Math.min(displayPage + 1, totalPages);
-                pageIndicator.textContent = `Pages ${displayPage}-${endPage} of ${totalPages}`;
+            if (currentLayout === 'dual' && dualPages) {
+                const leftPage = currentPage * 2 + 1;
+                const rightPage = Math.min(currentPage * 2 + 2, dualPages.length);
+                const totalPageCount = dualPages.length;
+                if (rightPage > leftPage) {
+                    pageIndicator.textContent = `Pages ${leftPage}-${rightPage} of ${totalPageCount}`;
+                } else {
+                    pageIndicator.textContent = `Page ${leftPage} of ${totalPageCount}`;
+                }
             } else {
+                const displayPage = currentPage + 1;
                 pageIndicator.textContent = `Page ${displayPage} of ${totalPages}`;
             }
         }

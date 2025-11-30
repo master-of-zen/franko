@@ -438,6 +438,7 @@ pub fn reader(config: &Config, book: &Book, chapter_index: usize) -> String {
             </aside>
             <main class="reader-main">
                 <header class="reader-header">
+                    <a href="/library" class="btn-icon" data-tooltip="Back to Library" title="Back to Library">←</a>
                     <button id="toggle-sidebar" class="btn-icon" data-tooltip="Table of Contents">☰</button>
                     <h1>{title}</h1>
                     <div class="reader-controls">
@@ -483,6 +484,270 @@ pub fn reader(config: &Config, book: &Book, chapter_index: usize) -> String {
     );
 
     base(&book.metadata.title, &content, config)
+}
+
+/// PDF viewer using PDF.js
+pub fn pdf_reader(config: &Config, book_id: &str, title: &str) -> String {
+    let content = format!(
+        r#"
+        <div class="pdf-viewer-layout">
+            <header class="pdf-header">
+                <div class="pdf-header-left">
+                    <a href="/library" class="btn-icon" title="Back to Library">←</a>
+                    <h1>{title}</h1>
+                </div>
+                <div class="pdf-controls">
+                    <button id="pdf-prev" class="btn-icon" title="Previous Page">◀</button>
+                    <span class="pdf-page-info">
+                        <input type="number" id="pdf-page-input" min="1" value="1"> / <span id="pdf-page-count">-</span>
+                    </span>
+                    <button id="pdf-next" class="btn-icon" title="Next Page">▶</button>
+                    <span class="pdf-separator"></span>
+                    <button id="pdf-zoom-out" class="btn-icon" title="Zoom Out">−</button>
+                    <span id="pdf-zoom-level">100%</span>
+                    <button id="pdf-zoom-in" class="btn-icon" title="Zoom In">+</button>
+                    <button id="pdf-fit-width" class="btn-icon" title="Fit Width">↔</button>
+                    <button id="pdf-fit-page" class="btn-icon" title="Fit Page">⛶</button>
+                    <span class="pdf-separator"></span>
+                    <button id="pdf-fullscreen" class="btn-icon" title="Fullscreen">⛶</button>
+                    <a href="/api/books/{book_id}/pdf" download class="btn-icon" title="Download PDF">⬇</a>
+                </div>
+            </header>
+            <div class="pdf-container" id="pdf-container">
+                <div class="pdf-loading" id="pdf-loading">
+                    <div class="spinner"></div>
+                    <p>Loading PDF...</p>
+                </div>
+                <div class="pdf-canvas-container" id="pdf-canvas-container">
+                    <canvas id="pdf-canvas"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+        <script>
+        (function() {{
+            'use strict';
+            
+            // PDF.js worker
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+            
+            // State
+            let pdfDoc = null;
+            let pageNum = 1;
+            let pageRendering = false;
+            let pageNumPending = null;
+            let scale = 1.0;
+            let fitMode = 'width'; // 'width', 'page', 'custom'
+            
+            // Elements
+            const canvas = document.getElementById('pdf-canvas');
+            const ctx = canvas.getContext('2d');
+            const container = document.getElementById('pdf-container');
+            const canvasContainer = document.getElementById('pdf-canvas-container');
+            const loading = document.getElementById('pdf-loading');
+            const pageInput = document.getElementById('pdf-page-input');
+            const pageCount = document.getElementById('pdf-page-count');
+            const zoomLevel = document.getElementById('pdf-zoom-level');
+            
+            // Load PDF
+            const url = '/api/books/{book_id}/pdf';
+            
+            pdfjsLib.getDocument(url).promise.then(function(pdf) {{
+                pdfDoc = pdf;
+                pageCount.textContent = pdf.numPages;
+                pageInput.max = pdf.numPages;
+                loading.style.display = 'none';
+                
+                // Load saved page
+                const savedPage = localStorage.getItem('pdf-page-{book_id}');
+                if (savedPage) {{
+                    pageNum = Math.min(parseInt(savedPage), pdf.numPages);
+                    pageInput.value = pageNum;
+                }}
+                
+                renderPage(pageNum);
+            }}).catch(function(error) {{
+                loading.innerHTML = '<p class="error">Failed to load PDF: ' + error.message + '</p>';
+            }});
+            
+            // Render page
+            function renderPage(num) {{
+                pageRendering = true;
+                
+                pdfDoc.getPage(num).then(function(page) {{
+                    // Calculate scale based on fit mode
+                    const containerWidth = container.clientWidth - 40;
+                    const containerHeight = container.clientHeight - 40;
+                    const viewport = page.getViewport({{ scale: 1 }});
+                    
+                    if (fitMode === 'width') {{
+                        scale = containerWidth / viewport.width;
+                    }} else if (fitMode === 'page') {{
+                        const scaleX = containerWidth / viewport.width;
+                        const scaleY = containerHeight / viewport.height;
+                        scale = Math.min(scaleX, scaleY);
+                    }}
+                    
+                    const scaledViewport = page.getViewport({{ scale: scale }});
+                    
+                    // Set canvas dimensions
+                    canvas.height = scaledViewport.height;
+                    canvas.width = scaledViewport.width;
+                    
+                    // Render
+                    const renderContext = {{
+                        canvasContext: ctx,
+                        viewport: scaledViewport
+                    }};
+                    
+                    page.render(renderContext).promise.then(function() {{
+                        pageRendering = false;
+                        
+                        if (pageNumPending !== null) {{
+                            renderPage(pageNumPending);
+                            pageNumPending = null;
+                        }}
+                    }});
+                }});
+                
+                // Update UI
+                pageInput.value = num;
+                zoomLevel.textContent = Math.round(scale * 100) + '%';
+                
+                // Save progress
+                localStorage.setItem('pdf-page-{book_id}', num);
+            }}
+            
+            // Queue page render
+            function queueRenderPage(num) {{
+                if (pageRendering) {{
+                    pageNumPending = num;
+                }} else {{
+                    renderPage(num);
+                }}
+            }}
+            
+            // Previous page
+            document.getElementById('pdf-prev').addEventListener('click', function() {{
+                if (pageNum <= 1) return;
+                pageNum--;
+                queueRenderPage(pageNum);
+            }});
+            
+            // Next page
+            document.getElementById('pdf-next').addEventListener('click', function() {{
+                if (pageNum >= pdfDoc.numPages) return;
+                pageNum++;
+                queueRenderPage(pageNum);
+            }});
+            
+            // Page input
+            pageInput.addEventListener('change', function() {{
+                const num = parseInt(pageInput.value);
+                if (num >= 1 && num <= pdfDoc.numPages) {{
+                    pageNum = num;
+                    queueRenderPage(pageNum);
+                }} else {{
+                    pageInput.value = pageNum;
+                }}
+            }});
+            
+            // Zoom controls
+            document.getElementById('pdf-zoom-in').addEventListener('click', function() {{
+                fitMode = 'custom';
+                scale = Math.min(scale * 1.25, 5);
+                queueRenderPage(pageNum);
+            }});
+            
+            document.getElementById('pdf-zoom-out').addEventListener('click', function() {{
+                fitMode = 'custom';
+                scale = Math.max(scale / 1.25, 0.25);
+                queueRenderPage(pageNum);
+            }});
+            
+            document.getElementById('pdf-fit-width').addEventListener('click', function() {{
+                fitMode = 'width';
+                queueRenderPage(pageNum);
+            }});
+            
+            document.getElementById('pdf-fit-page').addEventListener('click', function() {{
+                fitMode = 'page';
+                queueRenderPage(pageNum);
+            }});
+            
+            // Fullscreen
+            document.getElementById('pdf-fullscreen').addEventListener('click', function() {{
+                const viewer = document.querySelector('.pdf-viewer-layout');
+                if (document.fullscreenElement) {{
+                    document.exitFullscreen();
+                }} else {{
+                    viewer.requestFullscreen();
+                }}
+            }});
+            
+            // Keyboard navigation
+            document.addEventListener('keydown', function(e) {{
+                if (e.target.tagName === 'INPUT') return;
+                
+                switch(e.key) {{
+                    case 'ArrowLeft':
+                    case 'ArrowUp':
+                    case 'PageUp':
+                        if (pageNum > 1) {{
+                            pageNum--;
+                            queueRenderPage(pageNum);
+                        }}
+                        e.preventDefault();
+                        break;
+                    case 'ArrowRight':
+                    case 'ArrowDown':
+                    case 'PageDown':
+                    case ' ':
+                        if (pageNum < pdfDoc.numPages) {{
+                            pageNum++;
+                            queueRenderPage(pageNum);
+                        }}
+                        e.preventDefault();
+                        break;
+                    case 'Home':
+                        pageNum = 1;
+                        queueRenderPage(pageNum);
+                        e.preventDefault();
+                        break;
+                    case 'End':
+                        pageNum = pdfDoc.numPages;
+                        queueRenderPage(pageNum);
+                        e.preventDefault();
+                        break;
+                    case '+':
+                    case '=':
+                        fitMode = 'custom';
+                        scale = Math.min(scale * 1.25, 5);
+                        queueRenderPage(pageNum);
+                        break;
+                    case '-':
+                        fitMode = 'custom';
+                        scale = Math.max(scale / 1.25, 0.25);
+                        queueRenderPage(pageNum);
+                        break;
+                }}
+            }});
+            
+            // Resize handler
+            window.addEventListener('resize', function() {{
+                if (fitMode !== 'custom') {{
+                    queueRenderPage(pageNum);
+                }}
+            }});
+        }})();
+        </script>
+    "#,
+        title = escape_html(title),
+        book_id = book_id,
+    );
+
+    base(title, &content, config)
 }
 
 pub fn book_info(config: &Config, book: &Book) -> String {

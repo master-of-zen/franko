@@ -37,10 +37,17 @@ pub async fn reader(
     let library = state.library.read().await;
 
     match library.get_book(&id) {
-        Some(entry) => match crate::formats::parse_book(&entry.path) {
-            Ok(book) => Html(templates::reader(&state.config, &book, chapter_index)),
-            Err(e) => Html(templates::error(&format!("Failed to parse book: {}", e))),
-        },
+        Some(entry) => {
+            // Use PDF viewer for PDF files
+            if entry.format == "pdf" {
+                return Html(templates::pdf_reader(&state.config, &entry.id, &entry.metadata.title));
+            }
+            
+            match crate::formats::parse_book(&entry.path) {
+                Ok(book) => Html(templates::reader(&state.config, &book, chapter_index)),
+                Err(e) => Html(templates::error(&format!("Failed to parse book: {}", e))),
+            }
+        }
         None => Html(templates::error("Book not found")),
     }
 }

@@ -803,26 +803,77 @@ a:hover {
 /* Dual Page Layout */
 .reader-container[data-layout="dual"] {
     overflow: hidden;
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     align-items: stretch;
     justify-content: center;
     padding: 2rem;
     gap: var(--page-gap, 40px);
+    height: calc(100vh - 180px);
 }
 
 .reader-container[data-layout="dual"] .reader-content {
-    flex: 1;
-    max-width: calc(50% - var(--page-gap, 20px));
-    height: calc(100vh - 180px);
-    padding: 2rem;
+    height: 100%;
+    padding: 2.5rem;
     overflow: hidden;
-    column-count: 1;
-    column-gap: 0;
-    column-fill: auto;
     background: var(--bg-secondary);
     border-radius: var(--radius-lg);
     border: 1px solid var(--border);
     box-shadow: var(--shadow-md);
+}
+
+/* Right page in dual mode has book spine effect */
+.reader-container[data-layout="dual"] .reader-content:first-child {
+    border-right: none;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    box-shadow: inset -10px 0 20px -10px rgba(0, 0, 0, 0.1);
+}
+
+.reader-container[data-layout="dual"] .reader-content:last-child,
+.reader-container[data-layout="dual"] .page-right {
+    border-left: none;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    box-shadow: inset 10px 0 20px -10px rgba(0, 0, 0, 0.1);
+}
+
+/* Dual page containers */
+.dual-page-container {
+    display: contents;
+}
+
+.page-left,
+.page-right {
+    height: 100%;
+    padding: 2.5rem;
+    overflow: hidden;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+    font-family: var(--font-family-reading);
+    font-size: var(--font-size);
+    line-height: var(--line-height);
+}
+
+.page-left {
+    border-right: none;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    box-shadow: inset -10px 0 20px -10px rgba(0, 0, 0, 0.1);
+}
+
+.page-right {
+    border-left: none;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    box-shadow: inset 10px 0 20px -10px rgba(0, 0, 0, 0.1);
+}
+
+/* Hide content div in dual mode when using page containers */
+.reader-container[data-layout="dual"].dual-active .reader-content {
+    display: none;
 }
 
 /* Page container for paged/dual modes */
@@ -2391,4 +2442,170 @@ kbd {
 
 .library-controls .btn {
     white-space: nowrap;
+}
+
+/* ========== PDF Viewer ========== */
+.pdf-viewer-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background: var(--bg-primary);
+}
+
+.pdf-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1.5rem;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    gap: 1rem;
+    flex-shrink: 0;
+}
+
+.pdf-header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-width: 0;
+}
+
+.pdf-header-left h1 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0;
+}
+
+.pdf-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.pdf-page-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.pdf-page-info input {
+    width: 4rem;
+    padding: 0.375rem 0.5rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    text-align: center;
+}
+
+.pdf-page-info input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+}
+
+.pdf-separator {
+    width: 1px;
+    height: 1.5rem;
+    background: var(--border);
+    margin: 0 0.25rem;
+}
+
+#pdf-zoom-level {
+    min-width: 3.5rem;
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.pdf-container {
+    flex: 1;
+    overflow: auto;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 1.5rem;
+    background: var(--bg-tertiary);
+}
+
+.pdf-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    color: var(--text-muted);
+    padding: 3rem;
+}
+
+.pdf-loading .spinner {
+    width: 3rem;
+    height: 3rem;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.pdf-loading .error {
+    color: #ef4444;
+}
+
+.pdf-canvas-container {
+    display: flex;
+    justify-content: center;
+    background: white;
+    box-shadow: var(--shadow-xl);
+    border-radius: var(--radius-md);
+}
+
+#pdf-canvas {
+    display: block;
+    max-width: 100%;
+}
+
+/* PDF Viewer Fullscreen */
+.pdf-viewer-layout:fullscreen {
+    background: var(--bg-primary);
+}
+
+.pdf-viewer-layout:fullscreen .pdf-container {
+    background: #1a1a1a;
+}
+
+/* PDF Viewer Mobile */
+@media (max-width: 768px) {
+    .pdf-header {
+        flex-wrap: wrap;
+        padding: 0.5rem 1rem;
+    }
+
+    .pdf-header-left {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+
+    .pdf-controls {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .pdf-separator {
+        display: none;
+    }
+
+    .pdf-container {
+        padding: 0.5rem;
+    }
 }

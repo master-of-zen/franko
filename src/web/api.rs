@@ -22,6 +22,7 @@ pub fn router() -> Router<Arc<AppState>> {
         .route("/books/:id/content", get(get_book_content))
         .route("/books/:id/chapter/:chapter", get(get_chapter))
         .route("/books/:id/cover", get(get_book_cover))
+        .route("/books/:id/pdf", get(get_pdf_file))
         // Progress API
         .route("/books/:id/progress", get(get_progress))
         .route("/books/:id/progress", post(save_progress))
@@ -242,14 +243,23 @@ async fn add_book(
     let mut library = state.library.write().await;
 
     match library.add_book(&std::path::Path::new(&request.path), request.tags) {
-        Ok(entry) => Json(ApiResponse::ok(BookSummary {
-            id: entry.id.clone(),
-            title: entry.metadata.title.clone(),
-            authors: entry.metadata.authors.clone(),
-            format: entry.format.clone(),
-            progress: 0.0,
-            cover_url: None,
-        })),
+        Ok(entry) => {
+            let summary = BookSummary {
+                id: entry.id.clone(),
+                title: entry.metadata.title.clone(),
+                authors: entry.metadata.authors.clone(),
+                format: entry.format.clone(),
+                progress: 0.0,
+                cover_url: None,
+            };
+            
+            // Save the library after adding the book
+            if let Err(e) = library.save() {
+                return Json(ApiResponse::err(format!("Book added but failed to save library: {}", e)));
+            }
+            
+            Json(ApiResponse::ok(summary))
+        }
         Err(e) => Json(ApiResponse::err(e.to_string())),
     }
 }
@@ -475,6 +485,52 @@ async fn get_book_cover(State(state): State<Arc<AppState>>, Path(id): Path<Strin
                 Err(e) => Response::builder()
                     .status(StatusCode::INTERNAL_SERVER_ERROR)
                     .body(Body::from(format!("Error extracting cover: {}", e)))
+                    .unwrap(),
+            }
+        }
+        None => Response::builder()
+            .status(StatusCode::NOT_FOUND)
+            .body(Body::from("Book not found"))
+            .unwrap(),
+    }
+}
+
+/// Serve the raw PDF file for the PDF viewer
+async fn get_pdf_file(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+) -> Response<Body> {
+    let library = state.library.read().await;
+
+    match library.get_book(&id) {
+        Some(entry) => {
+            if entry.format != "pdf" {
+                return Response::builder()
+                    .status(StatusCode::BAD_REQUEST)
+                    .body(Body::from("Not a PDF file"))
+                    .unwrap();
+            }
+
+            match std::fs::read(&entry.path) {
+                Ok(data) => Response::builder()
+                    .status(StatusCode::OK)
+                    .header(header::CONTENT_TYPE, "application/pdf")
+                    .header(
+                        header::CONTENT_DISPOSITION,
+                        format!(
+                            "inline; filename=\"{}\"",
+                            entry
+                                .path
+                                .file_name()
+                                .and_then(|n| n.to_str())
+                                .unwrap_or("document.pdf")
+                        ),
+                    )
+                    .body(Body::from(data))
+                    .unwrap(),
+                Err(e) => Response::builder()
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .body(Body::from(format!("Error reading PDF: {}", e)))
                     .unwrap(),
             }
         }
