@@ -18,7 +18,7 @@ pub enum FrankoError {
 
     #[error("Library error: {0}")]
     Library(String),
-    
+
     #[error("Search error: {0}")]
     Search(String),
 
@@ -33,10 +33,10 @@ pub enum FrankoError {
 
     #[error("TOML serialize error: {0}")]
     TomlSerialize(#[from] toml::ser::Error),
-    
+
     #[error("Database error: {0}")]
     Database(#[from] rusqlite::Error),
-    
+
     #[error("{0}")]
     Other(#[from] anyhow::Error),
 
@@ -55,7 +55,7 @@ pub enum FrankoError {
     #[cfg(feature = "web")]
     #[error("Web server error: {0}")]
     Web(String),
-    
+
     #[cfg(feature = "search")]
     #[error("Tantivy error: {0}")]
     Tantivy(#[from] tantivy::TantivyError),

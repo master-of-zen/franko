@@ -14,7 +14,10 @@ pub fn parse(path: &Path) -> Result<Book> {
         .and_then(|e| e.to_str())
         .map(|e| e.to_lowercase());
 
-    let is_html = matches!(extension.as_deref(), Some("html") | Some("htm") | Some("xhtml"));
+    let is_html = matches!(
+        extension.as_deref(),
+        Some("html") | Some("htm") | Some("xhtml")
+    );
 
     let content = if is_html {
         parse_html_content(&content_str)
@@ -121,7 +124,8 @@ fn is_likely_header(line: &str) -> bool {
 
     // Check for chapter patterns
     let lower = line.to_lowercase();
-    if lower.starts_with("chapter ") || lower.starts_with("part ") || lower.starts_with("section ") {
+    if lower.starts_with("chapter ") || lower.starts_with("part ") || lower.starts_with("section ")
+    {
         return true;
     }
 
@@ -143,7 +147,10 @@ fn is_likely_header(line: &str) -> bool {
 
     // Check for all caps (but not single words)
     if line.len() > 3
-        && line.chars().filter(|c| c.is_alphabetic()).all(|c| c.is_uppercase())
+        && line
+            .chars()
+            .filter(|c| c.is_alphabetic())
+            .all(|c| c.is_uppercase())
         && line.contains(' ')
     {
         return true;
@@ -159,5 +166,10 @@ fn is_roman_numeral(s: &str) -> bool {
     if s.is_empty() {
         return false;
     }
-    s.chars().all(|c| matches!(c, 'I' | 'V' | 'X' | 'L' | 'C' | 'D' | 'M' | 'i' | 'v' | 'x' | 'l' | 'c' | 'd' | 'm'))
+    s.chars().all(|c| {
+        matches!(
+            c,
+            'I' | 'V' | 'X' | 'L' | 'C' | 'D' | 'M' | 'i' | 'v' | 'x' | 'l' | 'c' | 'd' | 'm'
+        )
+    })
 }

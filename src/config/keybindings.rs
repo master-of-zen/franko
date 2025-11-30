@@ -157,151 +157,111 @@ impl Keybindings {
         let mut bindings = HashMap::new();
 
         // Navigation
-        bindings.insert(Action::ScrollUp, vec![
-            KeyBinding::new("k"),
-            KeyBinding::new("Up"),
-        ]);
-        bindings.insert(Action::ScrollDown, vec![
-            KeyBinding::new("j"),
-            KeyBinding::new("Down"),
-        ]);
-        bindings.insert(Action::ScrollLeft, vec![
-            KeyBinding::new("h"),
-            KeyBinding::new("Left"),
-        ]);
-        bindings.insert(Action::ScrollRight, vec![
-            KeyBinding::new("l"),
-            KeyBinding::new("Right"),
-        ]);
-        bindings.insert(Action::PageUp, vec![
-            KeyBinding::new("b").with_ctrl(),
-            KeyBinding::new("PageUp"),
-        ]);
-        bindings.insert(Action::PageDown, vec![
-            KeyBinding::new("f").with_ctrl(),
-            KeyBinding::new("PageDown"),
-            KeyBinding::new("Space"),
-        ]);
-        bindings.insert(Action::HalfPageUp, vec![
-            KeyBinding::new("u").with_ctrl(),
-        ]);
-        bindings.insert(Action::HalfPageDown, vec![
-            KeyBinding::new("d").with_ctrl(),
-        ]);
-        bindings.insert(Action::GoToTop, vec![
-            KeyBinding::new("g"),
-            KeyBinding::new("Home"),
-        ]);
-        bindings.insert(Action::GoToBottom, vec![
-            KeyBinding::new("G"),
-            KeyBinding::new("End"),
-        ]);
-        bindings.insert(Action::GoToLine, vec![
-            KeyBinding::new(":"),
-        ]);
-        bindings.insert(Action::NextChapter, vec![
-            KeyBinding::new("]"),
-            KeyBinding::new("n"),
-        ]);
-        bindings.insert(Action::PrevChapter, vec![
-            KeyBinding::new("["),
-            KeyBinding::new("N"),
-        ]);
-        bindings.insert(Action::NextParagraph, vec![
-            KeyBinding::new("}"),
-        ]);
-        bindings.insert(Action::PrevParagraph, vec![
-            KeyBinding::new("{"),
-        ]);
+        bindings.insert(
+            Action::ScrollUp,
+            vec![KeyBinding::new("k"), KeyBinding::new("Up")],
+        );
+        bindings.insert(
+            Action::ScrollDown,
+            vec![KeyBinding::new("j"), KeyBinding::new("Down")],
+        );
+        bindings.insert(
+            Action::ScrollLeft,
+            vec![KeyBinding::new("h"), KeyBinding::new("Left")],
+        );
+        bindings.insert(
+            Action::ScrollRight,
+            vec![KeyBinding::new("l"), KeyBinding::new("Right")],
+        );
+        bindings.insert(
+            Action::PageUp,
+            vec![KeyBinding::new("b").with_ctrl(), KeyBinding::new("PageUp")],
+        );
+        bindings.insert(
+            Action::PageDown,
+            vec![
+                KeyBinding::new("f").with_ctrl(),
+                KeyBinding::new("PageDown"),
+                KeyBinding::new("Space"),
+            ],
+        );
+        bindings.insert(Action::HalfPageUp, vec![KeyBinding::new("u").with_ctrl()]);
+        bindings.insert(Action::HalfPageDown, vec![KeyBinding::new("d").with_ctrl()]);
+        bindings.insert(
+            Action::GoToTop,
+            vec![KeyBinding::new("g"), KeyBinding::new("Home")],
+        );
+        bindings.insert(
+            Action::GoToBottom,
+            vec![KeyBinding::new("G"), KeyBinding::new("End")],
+        );
+        bindings.insert(Action::GoToLine, vec![KeyBinding::new(":")]);
+        bindings.insert(
+            Action::NextChapter,
+            vec![KeyBinding::new("]"), KeyBinding::new("n")],
+        );
+        bindings.insert(
+            Action::PrevChapter,
+            vec![KeyBinding::new("["), KeyBinding::new("N")],
+        );
+        bindings.insert(Action::NextParagraph, vec![KeyBinding::new("}")]);
+        bindings.insert(Action::PrevParagraph, vec![KeyBinding::new("{")]);
 
         // Search
-        bindings.insert(Action::Search, vec![
-            KeyBinding::new("/"),
-        ]);
-        bindings.insert(Action::SearchNext, vec![
-            KeyBinding::new("n").in_mode("search"),
-        ]);
-        bindings.insert(Action::SearchPrev, vec![
-            KeyBinding::new("N").in_mode("search"),
-        ]);
-        bindings.insert(Action::ClearSearch, vec![
-            KeyBinding::new("Escape"),
-        ]);
+        bindings.insert(Action::Search, vec![KeyBinding::new("/")]);
+        bindings.insert(
+            Action::SearchNext,
+            vec![KeyBinding::new("n").in_mode("search")],
+        );
+        bindings.insert(
+            Action::SearchPrev,
+            vec![KeyBinding::new("N").in_mode("search")],
+        );
+        bindings.insert(Action::ClearSearch, vec![KeyBinding::new("Escape")]);
 
         // Bookmarks
-        bindings.insert(Action::AddBookmark, vec![
-            KeyBinding::new("m"),
-        ]);
-        bindings.insert(Action::ListBookmarks, vec![
-            KeyBinding::new("'"),
-        ]);
-        bindings.insert(Action::GotoBookmark, vec![
-            KeyBinding::new("`"),
-        ]);
+        bindings.insert(Action::AddBookmark, vec![KeyBinding::new("m")]);
+        bindings.insert(Action::ListBookmarks, vec![KeyBinding::new("'")]);
+        bindings.insert(Action::GotoBookmark, vec![KeyBinding::new("`")]);
 
         // UI
-        bindings.insert(Action::ToggleFullscreen, vec![
-            KeyBinding::new("f"),
-        ]);
-        bindings.insert(Action::ToggleSidebar, vec![
-            KeyBinding::new("s"),
-        ]);
-        bindings.insert(Action::ToggleStatusBar, vec![
-            KeyBinding::new("S"),
-        ]);
-        bindings.insert(Action::IncreaseFontSize, vec![
-            KeyBinding::new("="),
-            KeyBinding::new("+"),
-        ]);
-        bindings.insert(Action::DecreaseFontSize, vec![
-            KeyBinding::new("-"),
-        ]);
-        bindings.insert(Action::ResetFontSize, vec![
-            KeyBinding::new("0"),
-        ]);
-        bindings.insert(Action::Help, vec![
-            KeyBinding::new("?"),
-            KeyBinding::new("F1"),
-        ]);
-        bindings.insert(Action::Quit, vec![
-            KeyBinding::new("q"),
-        ]);
-        bindings.insert(Action::ForceQuit, vec![
-            KeyBinding::new("Q"),
-            KeyBinding::new("c").with_ctrl(),
-        ]);
-        bindings.insert(Action::Escape, vec![
-            KeyBinding::new("Escape"),
-        ]);
-        bindings.insert(Action::Confirm, vec![
-            KeyBinding::new("Enter"),
-        ]);
-        bindings.insert(Action::Refresh, vec![
-            KeyBinding::new("r").with_ctrl(),
-            KeyBinding::new("l").with_ctrl(),
-        ]);
-        bindings.insert(Action::ToggleTheme, vec![
-            KeyBinding::new("t"),
-        ]);
-        bindings.insert(Action::CommandPalette, vec![
-            KeyBinding::new(":"),
-        ]);
+        bindings.insert(Action::ToggleFullscreen, vec![KeyBinding::new("f")]);
+        bindings.insert(Action::ToggleSidebar, vec![KeyBinding::new("s")]);
+        bindings.insert(Action::ToggleStatusBar, vec![KeyBinding::new("S")]);
+        bindings.insert(
+            Action::IncreaseFontSize,
+            vec![KeyBinding::new("="), KeyBinding::new("+")],
+        );
+        bindings.insert(Action::DecreaseFontSize, vec![KeyBinding::new("-")]);
+        bindings.insert(Action::ResetFontSize, vec![KeyBinding::new("0")]);
+        bindings.insert(
+            Action::Help,
+            vec![KeyBinding::new("?"), KeyBinding::new("F1")],
+        );
+        bindings.insert(Action::Quit, vec![KeyBinding::new("q")]);
+        bindings.insert(
+            Action::ForceQuit,
+            vec![KeyBinding::new("Q"), KeyBinding::new("c").with_ctrl()],
+        );
+        bindings.insert(Action::Escape, vec![KeyBinding::new("Escape")]);
+        bindings.insert(Action::Confirm, vec![KeyBinding::new("Enter")]);
+        bindings.insert(
+            Action::Refresh,
+            vec![
+                KeyBinding::new("r").with_ctrl(),
+                KeyBinding::new("l").with_ctrl(),
+            ],
+        );
+        bindings.insert(Action::ToggleTheme, vec![KeyBinding::new("t")]);
+        bindings.insert(Action::CommandPalette, vec![KeyBinding::new(":")]);
 
         // Selection
-        bindings.insert(Action::StartSelection, vec![
-            KeyBinding::new("v"),
-        ]);
-        bindings.insert(Action::CopySelection, vec![
-            KeyBinding::new("y"),
-        ]);
+        bindings.insert(Action::StartSelection, vec![KeyBinding::new("v")]);
+        bindings.insert(Action::CopySelection, vec![KeyBinding::new("y")]);
 
         // Library
-        bindings.insert(Action::OpenLibrary, vec![
-            KeyBinding::new("L"),
-        ]);
-        bindings.insert(Action::BookInfo, vec![
-            KeyBinding::new("i"),
-        ]);
+        bindings.insert(Action::OpenLibrary, vec![KeyBinding::new("L")]);
+        bindings.insert(Action::BookInfo, vec![KeyBinding::new("i")]);
 
         Self {
             preset: "vim".to_string(),
@@ -316,72 +276,62 @@ impl Keybindings {
         let mut bindings = HashMap::new();
 
         // Navigation
-        bindings.insert(Action::ScrollUp, vec![
-            KeyBinding::new("p").with_ctrl(),
-            KeyBinding::new("Up"),
-        ]);
-        bindings.insert(Action::ScrollDown, vec![
-            KeyBinding::new("n").with_ctrl(),
-            KeyBinding::new("Down"),
-        ]);
-        bindings.insert(Action::ScrollLeft, vec![
-            KeyBinding::new("b").with_ctrl(),
-            KeyBinding::new("Left"),
-        ]);
-        bindings.insert(Action::ScrollRight, vec![
-            KeyBinding::new("f").with_ctrl(),
-            KeyBinding::new("Right"),
-        ]);
-        bindings.insert(Action::PageUp, vec![
-            KeyBinding::new("v").with_alt(),
-            KeyBinding::new("PageUp"),
-        ]);
-        bindings.insert(Action::PageDown, vec![
-            KeyBinding::new("v").with_ctrl(),
-            KeyBinding::new("PageDown"),
-        ]);
-        bindings.insert(Action::GoToTop, vec![
-            KeyBinding::new("<").with_alt(),
-            KeyBinding::new("Home"),
-        ]);
-        bindings.insert(Action::GoToBottom, vec![
-            KeyBinding::new(">").with_alt(),
-            KeyBinding::new("End"),
-        ]);
-        bindings.insert(Action::GoToLine, vec![
-            KeyBinding::new("g").with_alt(),
-        ]);
+        bindings.insert(
+            Action::ScrollUp,
+            vec![KeyBinding::new("p").with_ctrl(), KeyBinding::new("Up")],
+        );
+        bindings.insert(
+            Action::ScrollDown,
+            vec![KeyBinding::new("n").with_ctrl(), KeyBinding::new("Down")],
+        );
+        bindings.insert(
+            Action::ScrollLeft,
+            vec![KeyBinding::new("b").with_ctrl(), KeyBinding::new("Left")],
+        );
+        bindings.insert(
+            Action::ScrollRight,
+            vec![KeyBinding::new("f").with_ctrl(), KeyBinding::new("Right")],
+        );
+        bindings.insert(
+            Action::PageUp,
+            vec![KeyBinding::new("v").with_alt(), KeyBinding::new("PageUp")],
+        );
+        bindings.insert(
+            Action::PageDown,
+            vec![
+                KeyBinding::new("v").with_ctrl(),
+                KeyBinding::new("PageDown"),
+            ],
+        );
+        bindings.insert(
+            Action::GoToTop,
+            vec![KeyBinding::new("<").with_alt(), KeyBinding::new("Home")],
+        );
+        bindings.insert(
+            Action::GoToBottom,
+            vec![KeyBinding::new(">").with_alt(), KeyBinding::new("End")],
+        );
+        bindings.insert(Action::GoToLine, vec![KeyBinding::new("g").with_alt()]);
 
         // Search
-        bindings.insert(Action::Search, vec![
-            KeyBinding::new("s").with_ctrl(),
-        ]);
-        bindings.insert(Action::SearchNext, vec![
-            KeyBinding::new("s").with_ctrl(),
-        ]);
-        bindings.insert(Action::SearchPrev, vec![
-            KeyBinding::new("r").with_ctrl(),
-        ]);
+        bindings.insert(Action::Search, vec![KeyBinding::new("s").with_ctrl()]);
+        bindings.insert(Action::SearchNext, vec![KeyBinding::new("s").with_ctrl()]);
+        bindings.insert(Action::SearchPrev, vec![KeyBinding::new("r").with_ctrl()]);
 
         // UI
-        bindings.insert(Action::Quit, vec![
-            KeyBinding::new("q").with_ctrl(),
-        ]);
-        bindings.insert(Action::Help, vec![
-            KeyBinding::new("h").with_ctrl(),
-        ]);
-        bindings.insert(Action::Escape, vec![
-            KeyBinding::new("g").with_ctrl(),
-            KeyBinding::new("Escape"),
-        ]);
+        bindings.insert(Action::Quit, vec![KeyBinding::new("q").with_ctrl()]);
+        bindings.insert(Action::Help, vec![KeyBinding::new("h").with_ctrl()]);
+        bindings.insert(
+            Action::Escape,
+            vec![KeyBinding::new("g").with_ctrl(), KeyBinding::new("Escape")],
+        );
 
         // Selection
-        bindings.insert(Action::StartSelection, vec![
-            KeyBinding::new("Space").with_ctrl(),
-        ]);
-        bindings.insert(Action::CopySelection, vec![
-            KeyBinding::new("w").with_alt(),
-        ]);
+        bindings.insert(
+            Action::StartSelection,
+            vec![KeyBinding::new("Space").with_ctrl()],
+        );
+        bindings.insert(Action::CopySelection, vec![KeyBinding::new("w").with_alt()]);
 
         Self {
             preset: "emacs".to_string(),
@@ -396,65 +346,53 @@ impl Keybindings {
         let mut bindings = HashMap::new();
 
         // Simple navigation
-        bindings.insert(Action::ScrollUp, vec![
-            KeyBinding::new("Up"),
-        ]);
-        bindings.insert(Action::ScrollDown, vec![
-            KeyBinding::new("Down"),
-        ]);
-        bindings.insert(Action::PageUp, vec![
-            KeyBinding::new("PageUp"),
-            KeyBinding::new("Left"),
-        ]);
-        bindings.insert(Action::PageDown, vec![
-            KeyBinding::new("PageDown"),
-            KeyBinding::new("Right"),
-            KeyBinding::new("Space"),
-        ]);
-        bindings.insert(Action::GoToTop, vec![
-            KeyBinding::new("Home"),
-        ]);
-        bindings.insert(Action::GoToBottom, vec![
-            KeyBinding::new("End"),
-        ]);
-        bindings.insert(Action::NextChapter, vec![
-            KeyBinding::new("n"),
-        ]);
-        bindings.insert(Action::PrevChapter, vec![
-            KeyBinding::new("p"),
-        ]);
+        bindings.insert(Action::ScrollUp, vec![KeyBinding::new("Up")]);
+        bindings.insert(Action::ScrollDown, vec![KeyBinding::new("Down")]);
+        bindings.insert(
+            Action::PageUp,
+            vec![KeyBinding::new("PageUp"), KeyBinding::new("Left")],
+        );
+        bindings.insert(
+            Action::PageDown,
+            vec![
+                KeyBinding::new("PageDown"),
+                KeyBinding::new("Right"),
+                KeyBinding::new("Space"),
+            ],
+        );
+        bindings.insert(Action::GoToTop, vec![KeyBinding::new("Home")]);
+        bindings.insert(Action::GoToBottom, vec![KeyBinding::new("End")]);
+        bindings.insert(Action::NextChapter, vec![KeyBinding::new("n")]);
+        bindings.insert(Action::PrevChapter, vec![KeyBinding::new("p")]);
 
         // Search
-        bindings.insert(Action::Search, vec![
-            KeyBinding::new("f").with_ctrl(),
-        ]);
+        bindings.insert(Action::Search, vec![KeyBinding::new("f").with_ctrl()]);
 
         // Bookmarks
-        bindings.insert(Action::AddBookmark, vec![
-            KeyBinding::new("b").with_ctrl(),
-        ]);
-        bindings.insert(Action::ListBookmarks, vec![
-            KeyBinding::new("B").with_ctrl(),
-        ]);
+        bindings.insert(Action::AddBookmark, vec![KeyBinding::new("b").with_ctrl()]);
+        bindings.insert(
+            Action::ListBookmarks,
+            vec![KeyBinding::new("B").with_ctrl()],
+        );
 
         // UI
-        bindings.insert(Action::ToggleFullscreen, vec![
-            KeyBinding::new("F11"),
-        ]);
-        bindings.insert(Action::IncreaseFontSize, vec![
-            KeyBinding::new("+").with_ctrl(),
-            KeyBinding::new("=").with_ctrl(),
-        ]);
-        bindings.insert(Action::DecreaseFontSize, vec![
-            KeyBinding::new("-").with_ctrl(),
-        ]);
-        bindings.insert(Action::Help, vec![
-            KeyBinding::new("F1"),
-        ]);
-        bindings.insert(Action::Quit, vec![
-            KeyBinding::new("q"),
-            KeyBinding::new("Escape"),
-        ]);
+        bindings.insert(Action::ToggleFullscreen, vec![KeyBinding::new("F11")]);
+        bindings.insert(
+            Action::IncreaseFontSize,
+            vec![
+                KeyBinding::new("+").with_ctrl(),
+                KeyBinding::new("=").with_ctrl(),
+            ],
+        );
+        bindings.insert(
+            Action::DecreaseFontSize,
+            vec![KeyBinding::new("-").with_ctrl()],
+        );
+        bindings.insert(Action::Help, vec![KeyBinding::new("F1")]);
+        bindings.insert(
+            Action::Quit,
+            vec![KeyBinding::new("q"), KeyBinding::new("Escape")],
+        );
 
         Self {
             preset: "reader".to_string(),

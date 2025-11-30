@@ -23,7 +23,7 @@ pub fn run(book: Book, config: &Config) -> Result<()> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen)?;
-    
+
     if config.tui.mouse_support {
         execute!(stdout, EnableMouseCapture)?;
     }
@@ -33,7 +33,7 @@ pub fn run(book: Book, config: &Config) -> Result<()> {
 
     // Create application state
     let mut state = AppState::new(book);
-    
+
     // Apply config
     state.show_sidebar = config.tui.show_sidebar;
     state.show_status_bar = config.tui.status_bar;

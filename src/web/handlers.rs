@@ -17,14 +17,14 @@ pub struct ReaderQuery {
 pub async fn index(State(state): State<Arc<AppState>>) -> Html<String> {
     let library = state.library.read().await;
     let books = library.books();
-    
+
     Html(templates::index(&state.config, &books))
 }
 
 pub async fn library(State(state): State<Arc<AppState>>) -> Html<String> {
     let library = state.library.read().await;
     let books = library.books();
-    
+
     Html(templates::library(&state.config, &books))
 }
 
@@ -35,14 +35,12 @@ pub async fn reader(
 ) -> Html<String> {
     let chapter_index = query.chapter.unwrap_or(0);
     let library = state.library.read().await;
-    
+
     match library.get_book(&id) {
-        Some(entry) => {
-            match crate::formats::parse_book(&entry.path) {
-                Ok(book) => Html(templates::reader(&state.config, &book, chapter_index)),
-                Err(e) => Html(templates::error(&format!("Failed to parse book: {}", e))),
-            }
-        }
+        Some(entry) => match crate::formats::parse_book(&entry.path) {
+            Ok(book) => Html(templates::reader(&state.config, &book, chapter_index)),
+            Err(e) => Html(templates::error(&format!("Failed to parse book: {}", e))),
+        },
         None => Html(templates::error("Book not found")),
     }
 }
@@ -52,31 +50,24 @@ pub async fn reader_chapter(
     Path((id, chapter)): Path<(String, usize)>,
 ) -> Html<String> {
     let library = state.library.read().await;
-    
+
     match library.get_book(&id) {
-        Some(entry) => {
-            match crate::formats::parse_book(&entry.path) {
-                Ok(book) => Html(templates::reader(&state.config, &book, chapter)),
-                Err(e) => Html(templates::error(&format!("Failed to parse book: {}", e))),
-            }
-        }
+        Some(entry) => match crate::formats::parse_book(&entry.path) {
+            Ok(book) => Html(templates::reader(&state.config, &book, chapter)),
+            Err(e) => Html(templates::error(&format!("Failed to parse book: {}", e))),
+        },
         None => Html(templates::error("Book not found")),
     }
 }
 
-pub async fn book_info(
-    State(state): State<Arc<AppState>>,
-    Path(id): Path<String>,
-) -> Html<String> {
+pub async fn book_info(State(state): State<Arc<AppState>>, Path(id): Path<String>) -> Html<String> {
     let library = state.library.read().await;
-    
+
     match library.get_book(&id) {
-        Some(entry) => {
-            match crate::formats::parse_book(&entry.path) {
-                Ok(book) => Html(templates::book_info(&state.config, &book)),
-                Err(e) => Html(templates::error(&format!("Failed to parse book: {}", e))),
-            }
-        }
+        Some(entry) => match crate::formats::parse_book(&entry.path) {
+            Ok(book) => Html(templates::book_info(&state.config, &book)),
+            Err(e) => Html(templates::error(&format!("Failed to parse book: {}", e))),
+        },
         None => Html(templates::error("Book not found")),
     }
 }

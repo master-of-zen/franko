@@ -63,7 +63,9 @@ impl Color {
             Color::Named(name) => name.clone(),
             Color::Hex(hex) => hex.clone(),
             Color::Rgb { r, g, b } => format!("rgb({}, {}, {})", r, g, b),
-            Color::Rgba { r, g, b, a } => format!("rgba({}, {}, {}, {})", r, g, b, *a as f32 / 255.0),
+            Color::Rgba { r, g, b, a } => {
+                format!("rgba({}, {}, {}, {})", r, g, b, *a as f32 / 255.0)
+            }
         }
     }
 

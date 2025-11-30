@@ -194,10 +194,7 @@ pub enum ContentBlock {
     },
 
     /// A heading
-    Heading {
-        level: u8,
-        text: String,
-    },
+    Heading { level: u8, text: String },
 
     /// A blockquote
     Quote {
@@ -221,24 +218,16 @@ pub enum ContentBlock {
     },
 
     /// A list
-    List {
-        ordered: bool,
-        items: Vec<String>,
-    },
+    List { ordered: bool, items: Vec<String> },
 
     /// A horizontal rule/separator
     Separator,
 
     /// A footnote
-    Footnote {
-        id: String,
-        content: String,
-    },
+    Footnote { id: String, content: String },
 
     /// Raw HTML (for formats that support it)
-    RawHtml {
-        html: String,
-    },
+    RawHtml { html: String },
 
     /// A table
     Table {

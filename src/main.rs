@@ -64,7 +64,10 @@ async fn main() -> Result<()> {
         }
         Commands::Init => {
             config::init_config()?;
-            println!("Configuration initialized at {}", config::config_path()?.display());
+            println!(
+                "Configuration initialized at {}",
+                config::config_path()?.display()
+            );
         }
     }
 

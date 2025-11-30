@@ -383,9 +383,11 @@ impl AppState {
     pub fn add_bookmark(&mut self, name: Option<String>) {
         let id = uuid::Uuid::new_v4().to_string();
         let name = name.unwrap_or_else(|| {
-            format!("Bookmark at Ch.{} P.{}", 
-                self.position.chapter + 1, 
-                self.position.block + 1)
+            format!(
+                "Bookmark at Ch.{} P.{}",
+                self.position.chapter + 1,
+                self.position.block + 1
+            )
         });
 
         self.bookmarks.push(Bookmark {
@@ -467,7 +469,7 @@ impl AppState {
         }
 
         self.search.active = !self.search.results.is_empty();
-        
+
         let count = self.search.results.len();
         if count > 0 {
             self.show_message(format!("Found {} matches", count), MessageType::Info);
@@ -479,7 +481,9 @@ impl AppState {
 
     /// Go to current search result
     pub fn go_to_search_result(&mut self) {
-        if let Some(&(chapter_idx, block_idx, _, _)) = self.search.results.get(self.search.current_result) {
+        if let Some(&(chapter_idx, block_idx, _, _)) =
+            self.search.results.get(self.search.current_result)
+        {
             self.position.chapter = chapter_idx;
             self.position.block = block_idx;
             self.invalidate_cache();

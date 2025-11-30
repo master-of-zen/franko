@@ -2,7 +2,10 @@
 
 use super::AppState;
 use axum::{
+    body::Body,
     extract::{Path, Query, State},
+    http::{header, StatusCode},
+    response::Response,
     routing::{delete, get, post, put},
     Json, Router,
 };
@@ -18,9 +21,12 @@ pub fn router() -> Router<Arc<AppState>> {
         .route("/books/:id", delete(remove_book))
         .route("/books/:id/content", get(get_book_content))
         .route("/books/:id/chapter/:chapter", get(get_chapter))
+        .route("/books/:id/cover", get(get_book_cover))
         // Progress API
         .route("/books/:id/progress", get(get_progress))
         .route("/books/:id/progress", post(save_progress))
+        // Reading time API
+        .route("/books/:id/reading-time", post(update_reading_time))
         // Bookmarks API
         .route("/books/:id/bookmarks", get(list_bookmarks))
         .route("/books/:id/bookmarks", post(add_bookmark))
@@ -28,10 +34,16 @@ pub fn router() -> Router<Arc<AppState>> {
         // Annotations API
         .route("/books/:id/annotations", get(list_annotations))
         .route("/books/:id/annotations", post(add_annotation))
-        .route("/books/:id/annotations/:annotation_id", delete(remove_annotation))
+        .route(
+            "/books/:id/annotations/:annotation_id",
+            delete(remove_annotation),
+        )
         // Search API
         .route("/search", get(search_library))
         .route("/books/:id/search", get(search_book))
+        // Statistics API
+        .route("/statistics", get(get_library_statistics))
+        .route("/books/:id/statistics", get(get_book_statistics))
         // Settings API
         .route("/settings", get(get_settings))
         .route("/settings", put(update_settings))
@@ -153,8 +165,8 @@ async fn list_books(
     Query(query): Query<ListBooksQuery>,
 ) -> Json<ApiResponse<Vec<BookSummary>>> {
     let library = state.library.read().await;
-    
-    let books: Vec<BookSummary> = library
+
+    let mut books: Vec<BookSummary> = library
         .books()
         .iter()
         .map(|entry| BookSummary {
@@ -163,9 +175,45 @@ async fn list_books(
             authors: entry.metadata.authors.clone(),
             format: entry.format.clone(),
             progress: entry.progress,
-            cover_url: entry.cover_path.as_ref().map(|p| format!("/api/books/{}/cover", entry.id)),
+            cover_url: entry
+                .cover_path
+                .as_ref()
+                .map(|_p| format!("/api/books/{}/cover", entry.id)),
         })
         .collect();
+
+    // Apply filters from query
+    if let Some(format_filter) = &query.format {
+        books.retain(|b| b.format.eq_ignore_ascii_case(format_filter));
+    }
+    if let Some(tag_filter) = &query.tag {
+        // Tag filtering would require LibraryEntry to be accessible here
+        // For now, we don't filter by tag in the API
+        let _ = tag_filter;
+    }
+
+    // Apply sorting
+    if let Some(sort_by) = &query.sort {
+        match sort_by.as_str() {
+            "title" => books.sort_by(|a, b| a.title.cmp(&b.title)),
+            "author" => books.sort_by(|a, b| {
+                let a_author = a.authors.first().map(|s| s.as_str()).unwrap_or("");
+                let b_author = b.authors.first().map(|s| s.as_str()).unwrap_or("");
+                a_author.cmp(b_author)
+            }),
+            "progress" => books.sort_by(|a, b| {
+                b.progress
+                    .partial_cmp(&a.progress)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            }),
+            _ => {}
+        }
+    }
+
+    // Apply pagination
+    let offset = query.offset.unwrap_or(0);
+    let limit = query.limit.unwrap_or(books.len());
+    let books: Vec<BookSummary> = books.into_iter().skip(offset).take(limit).collect();
 
     Json(ApiResponse::ok(books))
 }
@@ -175,7 +223,7 @@ async fn add_book(
     Json(request): Json<AddBookRequest>,
 ) -> Json<ApiResponse<BookSummary>> {
     let mut library = state.library.write().await;
-    
+
     match library.add_book(&std::path::Path::new(&request.path), request.tags) {
         Ok(entry) => Json(ApiResponse::ok(BookSummary {
             id: entry.id.clone(),
@@ -194,7 +242,7 @@ async fn get_book(
     Path(id): Path<String>,
 ) -> Json<ApiResponse<BookDetail>> {
     let library = state.library.read().await;
-    
+
     match library.get_book(&id) {
         Some(entry) => {
             // Parse the book to get chapter count
@@ -229,7 +277,7 @@ async fn remove_book(
     Path(id): Path<String>,
 ) -> Json<ApiResponse<()>> {
     let mut library = state.library.write().await;
-    
+
     match library.remove_book(&id) {
         Ok(_) => Json(ApiResponse::ok(())),
         Err(e) => Json(ApiResponse::err(e.to_string())),
@@ -241,38 +289,36 @@ async fn get_book_content(
     Path(id): Path<String>,
 ) -> Json<ApiResponse<Vec<ChapterContent>>> {
     let library = state.library.read().await;
-    
+
     match library.get_book(&id) {
-        Some(entry) => {
-            match crate::formats::parse_book(&entry.path) {
-                Ok(book) => {
-                    let chapters: Vec<ChapterContent> = book
-                        .content
-                        .chapters
-                        .iter()
-                        .enumerate()
-                        .map(|(i, ch)| {
-                            let content_html = chapter_to_html(ch);
-                            ChapterContent {
-                                id: ch.id.clone(),
-                                title: ch.title.clone(),
-                                number: ch.number,
-                                content_html,
-                                word_count: ch.word_count(),
-                                prev_chapter: if i > 0 {
-                                    Some(book.content.chapters[i - 1].id.clone())
-                                } else {
-                                    None
-                                },
-                                next_chapter: book.content.chapters.get(i + 1).map(|c| c.id.clone()),
-                            }
-                        })
-                        .collect();
-                    Json(ApiResponse::ok(chapters))
-                }
-                Err(e) => Json(ApiResponse::err(e.to_string())),
+        Some(entry) => match crate::formats::parse_book(&entry.path) {
+            Ok(book) => {
+                let chapters: Vec<ChapterContent> = book
+                    .content
+                    .chapters
+                    .iter()
+                    .enumerate()
+                    .map(|(i, ch)| {
+                        let content_html = chapter_to_html(ch);
+                        ChapterContent {
+                            id: ch.id.clone(),
+                            title: ch.title.clone(),
+                            number: ch.number,
+                            content_html,
+                            word_count: ch.word_count(),
+                            prev_chapter: if i > 0 {
+                                Some(book.content.chapters[i - 1].id.clone())
+                            } else {
+                                None
+                            },
+                            next_chapter: book.content.chapters.get(i + 1).map(|c| c.id.clone()),
+                        }
+                    })
+                    .collect();
+                Json(ApiResponse::ok(chapters))
             }
-        }
+            Err(e) => Json(ApiResponse::err(e.to_string())),
+        },
         None => Json(ApiResponse::err("Book not found")),
     }
 }
@@ -282,35 +328,69 @@ async fn get_chapter(
     Path((id, chapter_idx)): Path<(String, usize)>,
 ) -> Json<ApiResponse<ChapterContent>> {
     let library = state.library.read().await;
-    
+
+    match library.get_book(&id) {
+        Some(entry) => match crate::formats::parse_book(&entry.path) {
+            Ok(book) => match book.content.chapters.get(chapter_idx) {
+                Some(ch) => {
+                    let content_html = chapter_to_html(ch);
+                    Json(ApiResponse::ok(ChapterContent {
+                        id: ch.id.clone(),
+                        title: ch.title.clone(),
+                        number: ch.number,
+                        content_html,
+                        word_count: ch.word_count(),
+                        prev_chapter: if chapter_idx > 0 {
+                            Some(book.content.chapters[chapter_idx - 1].id.clone())
+                        } else {
+                            None
+                        },
+                        next_chapter: book
+                            .content
+                            .chapters
+                            .get(chapter_idx + 1)
+                            .map(|c| c.id.clone()),
+                    }))
+                }
+                None => Json(ApiResponse::err("Chapter not found")),
+            },
+            Err(e) => Json(ApiResponse::err(e.to_string())),
+        },
+        None => Json(ApiResponse::err("Book not found")),
+    }
+}
+
+/// Get book cover image
+async fn get_book_cover(State(state): State<Arc<AppState>>, Path(id): Path<String>) -> Response {
+    let library = state.library.read().await;
+
     match library.get_book(&id) {
         Some(entry) => {
-            match crate::formats::parse_book(&entry.path) {
-                Ok(book) => {
-                    match book.content.chapters.get(chapter_idx) {
-                        Some(ch) => {
-                            let content_html = chapter_to_html(ch);
-                            Json(ApiResponse::ok(ChapterContent {
-                                id: ch.id.clone(),
-                                title: ch.title.clone(),
-                                number: ch.number,
-                                content_html,
-                                word_count: ch.word_count(),
-                                prev_chapter: if chapter_idx > 0 {
-                                    Some(book.content.chapters[chapter_idx - 1].id.clone())
-                                } else {
-                                    None
-                                },
-                                next_chapter: book.content.chapters.get(chapter_idx + 1).map(|c| c.id.clone()),
-                            }))
-                        }
-                        None => Json(ApiResponse::err("Chapter not found")),
-                    }
+            // Try to extract cover from the book file
+            match crate::formats::extract_cover(&entry.path) {
+                Ok(Some((data, mime))) => Response::builder()
+                    .status(StatusCode::OK)
+                    .header(header::CONTENT_TYPE, mime)
+                    .header(header::CACHE_CONTROL, "public, max-age=86400")
+                    .body(Body::from(data))
+                    .unwrap(),
+                Ok(None) => {
+                    // No cover found, return a placeholder or 404
+                    Response::builder()
+                        .status(StatusCode::NOT_FOUND)
+                        .body(Body::from("No cover available"))
+                        .unwrap()
                 }
-                Err(e) => Json(ApiResponse::err(e.to_string())),
+                Err(e) => Response::builder()
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .body(Body::from(format!("Error extracting cover: {}", e)))
+                    .unwrap(),
             }
         }
-        None => Json(ApiResponse::err("Book not found")),
+        None => Response::builder()
+            .status(StatusCode::NOT_FOUND)
+            .body(Body::from("Book not found"))
+            .unwrap(),
     }
 }
 
@@ -319,15 +399,13 @@ async fn get_progress(
     Path(id): Path<String>,
 ) -> Json<ApiResponse<ProgressRequest>> {
     let library = state.library.read().await;
-    
+
     match library.get_book(&id) {
-        Some(entry) => {
-            Json(ApiResponse::ok(ProgressRequest {
-                chapter: entry.position_chapter,
-                block: entry.position_block,
-                scroll_offset: entry.position_offset,
-            }))
-        }
+        Some(entry) => Json(ApiResponse::ok(ProgressRequest {
+            chapter: entry.position_chapter,
+            block: entry.position_block,
+            scroll_offset: entry.position_offset,
+        })),
         None => Json(ApiResponse::err("Book not found")),
     }
 }
@@ -338,11 +416,62 @@ async fn save_progress(
     Json(progress): Json<ProgressRequest>,
 ) -> Json<ApiResponse<()>> {
     let mut library = state.library.write().await;
-    
-    match library.update_progress(&id, progress.chapter, progress.block, progress.scroll_offset) {
+
+    match library.update_progress(
+        &id,
+        progress.chapter,
+        progress.block,
+        progress.scroll_offset,
+    ) {
         Ok(_) => Json(ApiResponse::ok(())),
         Err(e) => Json(ApiResponse::err(e.to_string())),
     }
+}
+
+#[derive(Deserialize)]
+pub struct ReadingTimeRequest {
+    pub seconds: u64,
+}
+
+/// Update reading time for a book
+async fn update_reading_time(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+    Json(request): Json<ReadingTimeRequest>,
+) -> Json<ApiResponse<()>> {
+    let mut library = state.library.write().await;
+
+    match library.update_reading_time(&id, request.seconds) {
+        Ok(_) => {
+            // Save library to persist the change
+            if let Err(e) = library.save() {
+                return Json(ApiResponse::err(format!("Failed to save: {}", e)));
+            }
+            Json(ApiResponse::ok(()))
+        }
+        Err(e) => Json(ApiResponse::err(e.to_string())),
+    }
+}
+
+/// Get statistics for a specific book
+async fn get_book_statistics(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+) -> Json<ApiResponse<crate::library::BookStats>> {
+    let library = state.library.read().await;
+
+    match library.get_book_stats(&id) {
+        Some(stats) => Json(ApiResponse::ok(stats)),
+        None => Json(ApiResponse::err("Book not found")),
+    }
+}
+
+/// Get overall library statistics
+async fn get_library_statistics(
+    State(state): State<Arc<AppState>>,
+) -> Json<ApiResponse<crate::library::LibraryStats>> {
+    let library = state.library.read().await;
+    Json(ApiResponse::ok(library.get_library_stats()))
 }
 
 async fn list_bookmarks(
@@ -350,7 +479,7 @@ async fn list_bookmarks(
     Path(id): Path<String>,
 ) -> Json<ApiResponse<Vec<crate::library::Bookmark>>> {
     let library = state.library.read().await;
-    
+
     match library.get_bookmarks(&id) {
         Ok(bookmarks) => Json(ApiResponse::ok(bookmarks)),
         Err(e) => Json(ApiResponse::err(e.to_string())),
@@ -363,7 +492,7 @@ async fn add_bookmark(
     Json(request): Json<BookmarkRequest>,
 ) -> Json<ApiResponse<crate::library::Bookmark>> {
     let mut library = state.library.write().await;
-    
+
     match library.add_bookmark(&id, request.name, request.chapter, request.block) {
         Ok(bookmark) => Json(ApiResponse::ok(bookmark)),
         Err(e) => Json(ApiResponse::err(e.to_string())),
@@ -375,7 +504,7 @@ async fn remove_bookmark(
     Path((id, bookmark_id)): Path<(String, String)>,
 ) -> Json<ApiResponse<()>> {
     let mut library = state.library.write().await;
-    
+
     match library.remove_bookmark(&id, &bookmark_id) {
         Ok(_) => Json(ApiResponse::ok(())),
         Err(e) => Json(ApiResponse::err(e.to_string())),
@@ -387,7 +516,7 @@ async fn list_annotations(
     Path(id): Path<String>,
 ) -> Json<ApiResponse<Vec<crate::library::Annotation>>> {
     let library = state.library.read().await;
-    
+
     match library.get_annotations(&id) {
         Ok(annotations) => Json(ApiResponse::ok(annotations)),
         Err(e) => Json(ApiResponse::err(e.to_string())),
@@ -400,7 +529,7 @@ async fn add_annotation(
     Json(request): Json<AnnotationRequest>,
 ) -> Json<ApiResponse<crate::library::Annotation>> {
     let mut library = state.library.write().await;
-    
+
     match library.add_annotation(
         &id,
         request.text,
@@ -419,7 +548,7 @@ async fn remove_annotation(
     Path((id, annotation_id)): Path<(String, String)>,
 ) -> Json<ApiResponse<()>> {
     let mut library = state.library.write().await;
-    
+
     match library.remove_annotation(&id, &annotation_id) {
         Ok(_) => Json(ApiResponse::ok(())),
         Err(e) => Json(ApiResponse::err(e.to_string())),
@@ -431,7 +560,7 @@ async fn search_library(
     Query(query): Query<SearchQuery>,
 ) -> Json<ApiResponse<Vec<BookSummary>>> {
     let library = state.library.read().await;
-    
+
     let results: Vec<BookSummary> = library
         .search(&query.q)
         .iter()
@@ -455,34 +584,32 @@ async fn search_book(
     Query(query): Query<SearchQuery>,
 ) -> Json<ApiResponse<Vec<SearchResult>>> {
     let library = state.library.read().await;
-    
-    match library.get_book(&id) {
-        Some(entry) => {
-            match crate::formats::parse_book(&entry.path) {
-                Ok(book) => {
-                    let mut results = Vec::new();
-                    let query_lower = query.q.to_lowercase();
 
-                    for (ch_idx, chapter) in book.content.chapters.iter().enumerate() {
-                        for (block_idx, block) in chapter.blocks.iter().enumerate() {
-                            let text = block.text();
-                            if text.to_lowercase().contains(&query_lower) {
-                                results.push(SearchResult {
-                                    chapter_id: chapter.id.clone(),
-                                    chapter_title: chapter.title.clone(),
-                                    chapter_index: ch_idx,
-                                    block_index: block_idx,
-                                    snippet: get_snippet(&text, &query.q, 100),
-                                });
-                            }
+    match library.get_book(&id) {
+        Some(entry) => match crate::formats::parse_book(&entry.path) {
+            Ok(book) => {
+                let mut results = Vec::new();
+                let query_lower = query.q.to_lowercase();
+
+                for (ch_idx, chapter) in book.content.chapters.iter().enumerate() {
+                    for (block_idx, block) in chapter.blocks.iter().enumerate() {
+                        let text = block.text();
+                        if text.to_lowercase().contains(&query_lower) {
+                            results.push(SearchResult {
+                                chapter_id: chapter.id.clone(),
+                                chapter_title: chapter.title.clone(),
+                                chapter_index: ch_idx,
+                                block_index: block_idx,
+                                snippet: get_snippet(&text, &query.q, 100),
+                            });
                         }
                     }
-
-                    Json(ApiResponse::ok(results))
                 }
-                Err(e) => Json(ApiResponse::err(e.to_string())),
+
+                Json(ApiResponse::ok(results))
             }
-        }
+            Err(e) => Json(ApiResponse::err(e.to_string())),
+        },
         None => Json(ApiResponse::err("Book not found")),
     }
 }
@@ -496,10 +623,10 @@ pub struct SearchResult {
     pub snippet: String,
 }
 
-async fn get_settings(
-    State(state): State<Arc<AppState>>,
-) -> Json<ApiResponse<serde_json::Value>> {
-    Json(ApiResponse::ok(serde_json::to_value(&state.config).unwrap_or_default()))
+async fn get_settings(State(state): State<Arc<AppState>>) -> Json<ApiResponse<serde_json::Value>> {
+    Json(ApiResponse::ok(
+        serde_json::to_value(&state.config).unwrap_or_default(),
+    ))
 }
 
 async fn update_settings(
@@ -514,7 +641,7 @@ async fn update_settings(
 
 fn chapter_to_html(chapter: &crate::formats::Chapter) -> String {
     use crate::formats::ContentBlock;
-    
+
     let mut html = String::new();
 
     for block in &chapter.blocks {
@@ -534,8 +661,15 @@ fn chapter_to_html(chapter: &crate::formats::Chapter) -> String {
                 html.push_str("</blockquote>\n");
             }
             ContentBlock::Code { language, code } => {
-                let lang_attr = language.as_ref().map(|l| format!(" class=\"language-{}\"", l)).unwrap_or_default();
-                html.push_str(&format!("<pre><code{}>{}</code></pre>\n", lang_attr, escape_html(code)));
+                let lang_attr = language
+                    .as_ref()
+                    .map(|l| format!(" class=\"language-{}\"", l))
+                    .unwrap_or_default();
+                html.push_str(&format!(
+                    "<pre><code{}>{}</code></pre>\n",
+                    lang_attr,
+                    escape_html(code)
+                ));
             }
             ContentBlock::List { ordered, items } => {
                 let tag = if *ordered { "ol" } else { "ul" };
@@ -548,9 +682,14 @@ fn chapter_to_html(chapter: &crate::formats::Chapter) -> String {
             ContentBlock::Separator => {
                 html.push_str("<hr>\n");
             }
-            ContentBlock::Image { src, alt, caption, .. } => {
+            ContentBlock::Image {
+                src, alt, caption, ..
+            } => {
                 html.push_str("<figure>\n");
-                let alt_attr = alt.as_ref().map(|a| format!(" alt=\"{}\"", escape_html(a))).unwrap_or_default();
+                let alt_attr = alt
+                    .as_ref()
+                    .map(|a| format!(" alt=\"{}\"", escape_html(a)))
+                    .unwrap_or_default();
                 html.push_str(&format!("<img src=\"{}\"{}>\n", escape_html(src), alt_attr));
                 if let Some(cap) = caption {
                     html.push_str(&format!("<figcaption>{}</figcaption>\n", escape_html(cap)));
@@ -590,11 +729,11 @@ fn escape_html(s: &str) -> String {
 fn get_snippet(text: &str, query: &str, max_len: usize) -> String {
     let lower = text.to_lowercase();
     let query_lower = query.to_lowercase();
-    
+
     if let Some(pos) = lower.find(&query_lower) {
         let start = pos.saturating_sub(max_len / 2);
         let end = (pos + query.len() + max_len / 2).min(text.len());
-        
+
         let mut snippet = String::new();
         if start > 0 {
             snippet.push_str("...");

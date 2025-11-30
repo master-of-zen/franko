@@ -5,9 +5,14 @@ use crate::formats::{Book, ContentBlock};
 use crate::library::LibraryEntry;
 
 pub fn base(title: &str, content: &str, config: &Config) -> String {
-    let theme_class = if config.web.dark_mode { "dark" } else { "light" };
-    
-    format!(r#"<!DOCTYPE html>
+    let theme_class = if config.web.dark_mode {
+        "dark"
+    } else {
+        "light"
+    };
+
+    format!(
+        r#"<!DOCTYPE html>
 <html lang="en" class="{theme_class}">
 <head>
     <meta charset="UTF-8">
@@ -43,7 +48,8 @@ pub fn index(config: &Config, books: &[LibraryEntry]) -> String {
         .iter()
         .take(10)
         .map(|book| {
-            format!(r#"
+            format!(
+                r#"
             <a href="/read/{id}" class="book-card">
                 <div class="book-cover">
                     {cover}
@@ -70,7 +76,8 @@ pub fn index(config: &Config, books: &[LibraryEntry]) -> String {
         })
         .collect();
 
-    let content = format!(r#"
+    let content = format!(
+        r#"
         <header class="site-header">
             <h1>📖 Franko</h1>
             <nav>
@@ -103,7 +110,8 @@ pub fn library(config: &Config, books: &[LibraryEntry]) -> String {
     let book_rows: String = books
         .iter()
         .map(|book| {
-            format!(r#"
+            format!(
+                r#"
             <tr>
                 <td><a href="/read/{id}">{title}</a></td>
                 <td>{author}</td>
@@ -129,7 +137,8 @@ pub fn library(config: &Config, books: &[LibraryEntry]) -> String {
         })
         .collect();
 
-    let content = format!(r#"
+    let content = format!(
+        r#"
         <header class="site-header">
             <h1>📖 Franko</h1>
             <nav>
@@ -175,7 +184,7 @@ pub fn library(config: &Config, books: &[LibraryEntry]) -> String {
 
 pub fn reader(config: &Config, book: &Book, chapter_index: usize) -> String {
     let chapter = book.content.chapters.get(chapter_index);
-    
+
     let chapter_content = if let Some(ch) = chapter {
         chapter_to_html(ch)
     } else {
@@ -188,7 +197,11 @@ pub fn reader(config: &Config, book: &Book, chapter_index: usize) -> String {
         .iter()
         .enumerate()
         .map(|(i, ch)| {
-            let active = if i == chapter_index { " class=\"active\"" } else { "" };
+            let active = if i == chapter_index {
+                " class=\"active\""
+            } else {
+                ""
+            };
             format!(
                 r#"<li{active}><a href="?chapter={i}">{title}</a></li>"#,
                 active = active,
@@ -199,18 +212,25 @@ pub fn reader(config: &Config, book: &Book, chapter_index: usize) -> String {
         .collect();
 
     let prev_link = if chapter_index > 0 {
-        format!(r#"<a href="?chapter={}" class="nav-prev">← Previous</a>"#, chapter_index - 1)
+        format!(
+            r#"<a href="?chapter={}" class="nav-prev">← Previous</a>"#,
+            chapter_index - 1
+        )
     } else {
         String::new()
     };
 
     let next_link = if chapter_index < book.content.chapters.len() - 1 {
-        format!(r#"<a href="?chapter={}" class="nav-next">Next →</a>"#, chapter_index + 1)
+        format!(
+            r#"<a href="?chapter={}" class="nav-next">Next →</a>"#,
+            chapter_index + 1
+        )
     } else {
         String::new()
     };
 
-    let content = format!(r#"
+    let content = format!(
+        r#"
         <div class="reader-layout">
             <aside class="reader-sidebar" id="sidebar">
                 <div class="sidebar-header">
@@ -225,17 +245,30 @@ pub fn reader(config: &Config, book: &Book, chapter_index: usize) -> String {
             </aside>
             <main class="reader-main">
                 <header class="reader-header">
-                    <button id="toggle-sidebar" class="btn-icon">☰</button>
+                    <button id="toggle-sidebar" class="btn-icon" data-tooltip="Table of Contents">☰</button>
                     <h1>{title}</h1>
                     <div class="reader-controls">
-                        <button id="decrease-font" class="btn-icon">A-</button>
-                        <button id="increase-font" class="btn-icon">A+</button>
-                        <button id="toggle-theme" class="btn-icon">🌓</button>
+                        <div class="layout-switcher" data-tooltip="Reading Layout">
+                            <button id="layout-scroll" class="btn-icon layout-btn active" data-layout="scroll" title="Continuous Scroll">📜</button>
+                            <button id="layout-paged" class="btn-icon layout-btn" data-layout="paged" title="Paged View">📄</button>
+                            <button id="layout-dual" class="btn-icon layout-btn" data-layout="dual" title="Dual Page">📖</button>
+                        </div>
+                        <button id="decrease-font" class="btn-icon" data-tooltip="Decrease Font">A-</button>
+                        <button id="increase-font" class="btn-icon" data-tooltip="Increase Font">A+</button>
+                        <button id="toggle-theme" class="btn-icon" data-tooltip="Toggle Theme">🌓</button>
+                        <button id="toggle-fullscreen" class="btn-icon" data-tooltip="Fullscreen">⛶</button>
                     </div>
                 </header>
-                <article class="reader-content" id="content">
-                    {chapter_content}
-                </article>
+                <div class="reader-container" id="reader-container" data-layout="scroll">
+                    <article class="reader-content" id="content">
+                        {chapter_content}
+                    </article>
+                </div>
+                <div class="page-controls" id="page-controls" style="display: none;">
+                    <button id="page-prev" class="btn-icon page-nav">←</button>
+                    <span class="page-indicator" id="page-indicator">Page 1</span>
+                    <button id="page-next" class="btn-icon page-nav">→</button>
+                </div>
                 <nav class="chapter-nav">
                     {prev_link}
                     <span class="chapter-indicator">Chapter {chapter_num} of {total_chapters}</span>
@@ -268,7 +301,8 @@ pub fn book_info(config: &Config, book: &Book) -> String {
         .collect::<Vec<_>>()
         .join(" ");
 
-    let content = format!(r#"
+    let content = format!(
+        r#"
         <header class="site-header">
             <h1>📖 Franko</h1>
             <nav>
@@ -305,22 +339,38 @@ pub fn book_info(config: &Config, book: &Book) -> String {
     "#,
         title = escape_html(&book.metadata.title),
         author = escape_html(&book.metadata.authors_string()),
-        description = book.metadata.description.as_ref()
+        description = book
+            .metadata
+            .description
+            .as_ref()
             .map(|d| format!(r#"<p class="description">{}</p>"#, escape_html(d)))
             .unwrap_or_default(),
-        publisher = book.metadata.publisher.as_ref()
+        publisher = book
+            .metadata
+            .publisher
+            .as_ref()
             .map(|p| format!(r#"<dt>Publisher</dt><dd>{}</dd>"#, escape_html(p)))
             .unwrap_or_default(),
-        published = book.metadata.published.as_ref()
+        published = book
+            .metadata
+            .published
+            .as_ref()
             .map(|p| format!(r#"<dt>Published</dt><dd>{}</dd>"#, escape_html(p)))
             .unwrap_or_default(),
-        language = book.metadata.language.as_ref()
+        language = book
+            .metadata
+            .language
+            .as_ref()
             .map(|l| format!(r#"<dt>Language</dt><dd>{}</dd>"#, escape_html(l)))
             .unwrap_or_default(),
-        word_count = book.metadata.word_count
+        word_count = book
+            .metadata
+            .word_count
             .map(|w| format!(r#"<dt>Word Count</dt><dd>{}</dd>"#, w))
             .unwrap_or_default(),
-        reading_time = book.metadata.reading_time
+        reading_time = book
+            .metadata
+            .reading_time
             .map(|t| format!(r#"<dt>Reading Time</dt><dd>~{} min</dd>"#, t))
             .unwrap_or_default(),
         subjects = subjects,
@@ -332,7 +382,8 @@ pub fn book_info(config: &Config, book: &Book) -> String {
 
 pub fn error(message: &str) -> String {
     let config = Config::default();
-    let content = format!(r#"
+    let content = format!(
+        r#"
         <header class="site-header">
             <h1>📖 Franko</h1>
             <nav>
@@ -354,12 +405,21 @@ pub fn error(message: &str) -> String {
 }
 
 pub fn settings(config: &Config) -> String {
-    let dark_checked = if config.web.dark_mode { "checked" } else { "" };
+    let _dark_checked = if config.web.dark_mode { "checked" } else { "" };
     let justify_checked = if config.reader.justify { "checked" } else { "" };
-    let hyphenate_checked = if config.reader.hyphenation { "checked" } else { "" };
-    let show_progress_checked = if config.tui.progress_bar { "checked" } else { "" };
-    
-    let content = format!(r#"
+    let hyphenate_checked = if config.reader.hyphenation {
+        "checked"
+    } else {
+        ""
+    };
+    let show_progress_checked = if config.tui.progress_bar {
+        "checked"
+    } else {
+        ""
+    };
+
+    let content = format!(
+        r#"
         <header class="site-header">
             <h1>📖 Franko</h1>
             <nav>
@@ -373,7 +433,7 @@ pub fn settings(config: &Config) -> String {
                 <h2>Settings</h2>
                 <p class="settings-subtitle">Customize your reading experience</p>
             </div>
-            
+
             <div class="settings-grid">
                 <!-- Appearance Section -->
                 <section class="settings-card">
@@ -395,7 +455,7 @@ pub fn settings(config: &Config) -> String {
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="setting-item">
                             <div class="setting-info">
                                 <label for="accent-color">Accent Color</label>
@@ -438,29 +498,29 @@ pub fn settings(config: &Config) -> String {
                                 </select>
                             </div>
                         </div>
-                        
+
                         <div class="setting-item">
                             <div class="setting-info">
                                 <label for="font-size">Font Size</label>
                                 <p class="setting-description">Base text size: <span id="font-size-value">{font_size}px</span></p>
                             </div>
                             <div class="setting-control">
-                                <input type="range" id="font-size" class="setting-range" 
+                                <input type="range" id="font-size" class="setting-range"
                                        min="12" max="32" value="{font_size}" step="1">
                             </div>
                         </div>
-                        
+
                         <div class="setting-item">
                             <div class="setting-info">
                                 <label for="line-height">Line Height</label>
                                 <p class="setting-description">Spacing between lines: <span id="line-height-value">{line_height}</span></p>
                             </div>
                             <div class="setting-control">
-                                <input type="range" id="line-height" class="setting-range" 
+                                <input type="range" id="line-height" class="setting-range"
                                        min="1.2" max="2.4" value="{line_height}" step="0.1">
                             </div>
                         </div>
-                        
+
                         <div class="setting-item">
                             <div class="setting-info">
                                 <label for="text-width">Text Width</label>
@@ -497,7 +557,7 @@ pub fn settings(config: &Config) -> String {
                                 </label>
                             </div>
                         </div>
-                        
+
                         <div class="setting-item">
                             <div class="setting-info">
                                 <label for="hyphenation">Hyphenation</label>
@@ -510,7 +570,7 @@ pub fn settings(config: &Config) -> String {
                                 </label>
                             </div>
                         </div>
-                        
+
                         <div class="setting-item">
                             <div class="setting-info">
                                 <label for="show-progress">Show Progress Bar</label>
@@ -523,7 +583,7 @@ pub fn settings(config: &Config) -> String {
                                 </label>
                             </div>
                         </div>
-                        
+
                         <div class="setting-item">
                             <div class="setting-info">
                                 <label for="scroll-behavior">Scroll Behavior</label>
@@ -585,7 +645,7 @@ pub fn settings(config: &Config) -> String {
                                 <span class="shortcut-desc">Close sidebar / dialogs</span>
                             </div>
                         </div>
-                        
+
                         <div class="setting-item" style="margin-top: 1.5rem;">
                             <div class="setting-info">
                                 <label for="keybinding-preset">Keybinding Preset</label>
@@ -616,11 +676,11 @@ pub fn settings(config: &Config) -> String {
                                 <p class="setting-description">Where your books are stored</p>
                             </div>
                             <div class="setting-control">
-                                <input type="text" id="library-path" class="setting-input" 
+                                <input type="text" id="library-path" class="setting-input"
                                        value="{library_path}" placeholder="~/Books">
                             </div>
                         </div>
-                        
+
                         <div class="setting-item">
                             <div class="setting-info">
                                 <label for="auto-scan">Auto-scan Library</label>
@@ -633,7 +693,7 @@ pub fn settings(config: &Config) -> String {
                                 </label>
                             </div>
                         </div>
-                        
+
                         <div class="setting-item">
                             <div class="setting-info">
                                 <label for="default-view">Default View</label>
@@ -663,11 +723,11 @@ pub fn settings(config: &Config) -> String {
                                 <p class="setting-description">Port for the web interface</p>
                             </div>
                             <div class="setting-control">
-                                <input type="number" id="web-port" class="setting-input" 
+                                <input type="number" id="web-port" class="setting-input"
                                        value="{web_port}" min="1024" max="65535">
                             </div>
                         </div>
-                        
+
                         <div class="setting-item">
                             <div class="setting-info">
                                 <label for="open-browser">Open Browser on Start</label>
@@ -680,7 +740,7 @@ pub fn settings(config: &Config) -> String {
                                 </label>
                             </div>
                         </div>
-                        
+
                         <div class="setting-actions">
                             <button class="btn" id="export-config">📤 Export Config</button>
                             <button class="btn" id="import-config">📥 Import Config</button>
@@ -689,7 +749,7 @@ pub fn settings(config: &Config) -> String {
                     </div>
                 </section>
             </div>
-            
+
             <div class="settings-footer">
                 <button class="btn primary" id="save-settings">💾 Save All Settings</button>
                 <p class="settings-note">Settings are automatically saved to your browser. Click save to persist to server.</p>
@@ -700,16 +760,45 @@ pub fn settings(config: &Config) -> String {
         light_active = if !config.web.dark_mode { "active" } else { "" },
         font_size = config.web.font_size,
         line_height = config.web.line_height,
-        font_system = if config.web.font_family.contains("system") { "selected" } else { "" },
-        font_serif = if config.web.font_family.contains("Georgia") { "selected" } else { "" },
-        font_sans = if config.web.font_family.contains("Inter") { "selected" } else { "" },
-        font_mono = if config.web.font_family.contains("JetBrains") { "selected" } else { "" },
-        font_literata = if config.web.font_family.contains("Literata") { "selected" } else { "" },
-        font_merriweather = if config.web.font_family.contains("Merriweather") { "selected" } else { "" },
+        font_system = if config.web.font_family.contains("system") {
+            "selected"
+        } else {
+            ""
+        },
+        font_serif = if config.web.font_family.contains("Georgia") {
+            "selected"
+        } else {
+            ""
+        },
+        font_sans = if config.web.font_family.contains("Inter") {
+            "selected"
+        } else {
+            ""
+        },
+        font_mono = if config.web.font_family.contains("JetBrains") {
+            "selected"
+        } else {
+            ""
+        },
+        font_literata = if config.web.font_family.contains("Literata") {
+            "selected"
+        } else {
+            ""
+        },
+        font_merriweather = if config.web.font_family.contains("Merriweather") {
+            "selected"
+        } else {
+            ""
+        },
         justify_checked = justify_checked,
         hyphenate_checked = hyphenate_checked,
         show_progress_checked = show_progress_checked,
-        library_path = config.library.books_dir.as_ref().map(|p| p.display().to_string()).unwrap_or_default(),
+        library_path = config
+            .library
+            .books_dir
+            .as_ref()
+            .map(|p| p.display().to_string())
+            .unwrap_or_default(),
         web_port = config.web.port,
     );
 
@@ -720,7 +809,10 @@ fn chapter_to_html(chapter: &crate::formats::Chapter) -> String {
     let mut html = String::new();
 
     if let Some(title) = &chapter.title {
-        html.push_str(&format!("<h2 class=\"chapter-title\">{}</h2>\n", escape_html(title)));
+        html.push_str(&format!(
+            "<h2 class=\"chapter-title\">{}</h2>\n",
+            escape_html(title)
+        ));
     }
 
     for block in &chapter.blocks {
@@ -730,7 +822,11 @@ fn chapter_to_html(chapter: &crate::formats::Chapter) -> String {
             }
             ContentBlock::Heading { level, text } => {
                 let tag_level = (*level + 1).min(6); // Offset by 1 since chapter title is h2
-                html.push_str(&format!("<h{l}>{t}</h{l}>\n", l = tag_level, t = escape_html(text)));
+                html.push_str(&format!(
+                    "<h{l}>{t}</h{l}>\n",
+                    l = tag_level,
+                    t = escape_html(text)
+                ));
             }
             ContentBlock::Quote { text, attribution } => {
                 html.push_str("<blockquote>\n");
@@ -741,10 +837,15 @@ fn chapter_to_html(chapter: &crate::formats::Chapter) -> String {
                 html.push_str("</blockquote>\n");
             }
             ContentBlock::Code { language, code } => {
-                let lang_class = language.as_ref()
+                let lang_class = language
+                    .as_ref()
                     .map(|l| format!(" class=\"language-{}\"", l))
                     .unwrap_or_default();
-                html.push_str(&format!("<pre><code{}>{}</code></pre>\n", lang_class, escape_html(code)));
+                html.push_str(&format!(
+                    "<pre><code{}>{}</code></pre>\n",
+                    lang_class,
+                    escape_html(code)
+                ));
             }
             ContentBlock::List { ordered, items } => {
                 let tag = if *ordered { "ol" } else { "ul" };
@@ -757,9 +858,12 @@ fn chapter_to_html(chapter: &crate::formats::Chapter) -> String {
             ContentBlock::Separator => {
                 html.push_str("<hr>\n");
             }
-            ContentBlock::Image { src, alt, caption, .. } => {
+            ContentBlock::Image {
+                src, alt, caption, ..
+            } => {
                 html.push_str("<figure>\n");
-                let alt_attr = alt.as_ref()
+                let alt_attr = alt
+                    .as_ref()
                     .map(|a| format!(" alt=\"{}\"", escape_html(a)))
                     .unwrap_or_default();
                 html.push_str(&format!("<img src=\"{}\"{}>\n", escape_html(src), alt_attr));

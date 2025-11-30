@@ -5,16 +5,16 @@
 
 use std::path::Path;
 
+use crate::cli::Interface;
 use crate::config::Config;
 use crate::error::Result;
-use crate::formats::{Book, parse_book};
-use crate::cli::Interface;
+use crate::formats::{parse_book, Book};
 
 /// Open and read a book with the specified interface
 pub async fn read_book(path: &Path, config: &Config, interface: Option<Interface>) -> Result<()> {
     // Parse the book
     let book = parse_book(path)?;
-    
+
     // Determine which interface to use
     let interface = interface.unwrap_or_else(|| {
         if config.reader.prefer_interface == "web" {
@@ -23,7 +23,7 @@ pub async fn read_book(path: &Path, config: &Config, interface: Option<Interface
             Interface::Tui
         }
     });
-    
+
     match interface {
         Interface::Tui => {
             #[cfg(feature = "tui")]
@@ -47,7 +47,7 @@ pub async fn read_book(path: &Path, config: &Config, interface: Option<Interface
             }
         }
     }
-    
+
     Ok(())
 }
 
@@ -70,14 +70,17 @@ impl ReadingSession {
             scroll_offset: 0,
         }
     }
-    
+
     /// Create a session resuming from a saved position
     pub fn resume(book: Book, chapter: usize, block: usize) -> Self {
         let chapter = chapter.min(book.content.chapters.len().saturating_sub(1));
-        let block = book.content.chapters.get(chapter)
+        let block = book
+            .content
+            .chapters
+            .get(chapter)
             .map(|c| block.min(c.blocks.len().saturating_sub(1)))
             .unwrap_or(0);
-        
+
         Self {
             book,
             current_chapter: chapter,
@@ -85,17 +88,17 @@ impl ReadingSession {
             scroll_offset: 0,
         }
     }
-    
+
     /// Get the current chapter
     pub fn chapter(&self) -> Option<&crate::formats::Chapter> {
         self.book.content.chapters.get(self.current_chapter)
     }
-    
+
     /// Get total number of chapters
     pub fn total_chapters(&self) -> usize {
         self.book.content.chapters.len()
     }
-    
+
     /// Go to next chapter
     pub fn next_chapter(&mut self) -> bool {
         if self.current_chapter + 1 < self.book.content.chapters.len() {
@@ -107,7 +110,7 @@ impl ReadingSession {
             false
         }
     }
-    
+
     /// Go to previous chapter
     pub fn prev_chapter(&mut self) -> bool {
         if self.current_chapter > 0 {
@@ -119,7 +122,7 @@ impl ReadingSession {
             false
         }
     }
-    
+
     /// Go to a specific chapter
     pub fn goto_chapter(&mut self, chapter: usize) -> bool {
         if chapter < self.book.content.chapters.len() {
@@ -131,31 +134,39 @@ impl ReadingSession {
             false
         }
     }
-    
+
     /// Calculate reading progress (0.0 - 1.0)
     pub fn progress(&self) -> f64 {
         if self.book.content.chapters.is_empty() {
             return 0.0;
         }
-        
-        let total_blocks: usize = self.book.content.chapters.iter()
+
+        let total_blocks: usize = self
+            .book
+            .content
+            .chapters
+            .iter()
             .map(|c| c.blocks.len())
             .sum();
-        
+
         if total_blocks == 0 {
             return 0.0;
         }
-        
-        let blocks_before: usize = self.book.content.chapters.iter()
+
+        let blocks_before: usize = self
+            .book
+            .content
+            .chapters
+            .iter()
             .take(self.current_chapter)
             .map(|c| c.blocks.len())
             .sum();
-        
+
         let current = blocks_before + self.current_block;
-        
+
         current as f64 / total_blocks as f64
     }
-    
+
     /// Get position string for display
     pub fn position_string(&self) -> String {
         format!(
@@ -166,7 +177,7 @@ impl ReadingSession {
             self.chapter().map(|c| c.blocks.len()).unwrap_or(0)
         )
     }
-    
+
     /// Get progress percentage string
     pub fn progress_string(&self) -> String {
         format!("{:.1}%", self.progress() * 100.0)
@@ -176,9 +187,9 @@ impl ReadingSession {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::formats::{BookMetadata, BookContent, Chapter, ContentBlock};
+    use crate::formats::{BookContent, BookMetadata, Chapter, ContentBlock};
     use std::path::PathBuf;
-    
+
     fn create_test_book() -> Book {
         Book {
             metadata: BookMetadata {
@@ -207,12 +218,10 @@ mod tests {
                         id: "ch2".to_string(),
                         title: Some("Chapter 2".to_string()),
                         number: Some(2),
-                        blocks: vec![
-                            ContentBlock::Paragraph {
-                                text: "Para 1".to_string(),
-                                styles: vec![],
-                            },
-                        ],
+                        blocks: vec![ContentBlock::Paragraph {
+                            text: "Para 1".to_string(),
+                            styles: vec![],
+                        }],
                         order: 1,
                     },
                 ],
@@ -222,33 +231,33 @@ mod tests {
             format: "test".to_string(),
         }
     }
-    
+
     #[test]
     fn test_reading_session_navigation() {
         let book = create_test_book();
         let mut session = ReadingSession::new(book);
-        
+
         assert_eq!(session.current_chapter, 0);
         assert!(session.next_chapter());
         assert_eq!(session.current_chapter, 1);
         assert!(!session.next_chapter()); // No more chapters
-        
+
         assert!(session.prev_chapter());
         assert_eq!(session.current_chapter, 0);
         assert!(!session.prev_chapter()); // Already at start
     }
-    
+
     #[test]
     fn test_reading_session_progress() {
         let book = create_test_book();
         let mut session = ReadingSession::new(book);
-        
+
         assert_eq!(session.progress(), 0.0);
-        
+
         session.current_block = 1;
         // 1 out of 3 blocks = ~0.33
         assert!((session.progress() - 0.333).abs() < 0.01);
-        
+
         session.next_chapter();
         // 2 out of 3 blocks = ~0.66
         assert!((session.progress() - 0.666).abs() < 0.01);

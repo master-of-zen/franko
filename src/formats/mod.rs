@@ -16,7 +16,7 @@ mod markdown;
 #[cfg(feature = "txt")]
 mod txt;
 
-pub use book::{Book, BookContent, BookMetadata, Chapter, ContentBlock, TextStyle, TocEntry, StyleType};
+pub use book::{Book, BookContent, BookMetadata, Chapter, ContentBlock, TocEntry};
 
 use anyhow::{Context, Result};
 use std::path::Path;
@@ -35,7 +35,12 @@ pub enum BookFormat {
 impl BookFormat {
     /// Detect format from file extension
     pub fn from_path(path: &Path) -> Self {
-        match path.extension().and_then(|e| e.to_str()).map(|e| e.to_lowercase()).as_deref() {
+        match path
+            .extension()
+            .and_then(|e| e.to_str())
+            .map(|e| e.to_lowercase())
+            .as_deref()
+        {
             Some("epub") => BookFormat::Epub,
             Some("pdf") => BookFormat::Pdf,
             Some("md") | Some("markdown") => BookFormat::Markdown,
@@ -123,5 +128,20 @@ pub fn get_metadata(path: &Path) -> Result<BookMetadata> {
             let book = parse_book(path)?;
             Ok(book.metadata)
         }
+    }
+}
+
+/// Extract cover image from a book file
+/// Returns (image_data, mime_type) if successful
+pub fn extract_cover(path: &Path) -> Result<Option<(Vec<u8>, String)>> {
+    let format = BookFormat::from_path(path);
+
+    match format {
+        #[cfg(feature = "epub")]
+        BookFormat::Epub => epub::extract_cover_from_path(path),
+
+        // PDFs don't have embedded covers in a standard way
+        // We could potentially extract the first page as an image in the future
+        _ => Ok(None),
     }
 }

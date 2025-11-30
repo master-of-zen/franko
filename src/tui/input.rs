@@ -1,7 +1,7 @@
 //! Input handling for TUI
 
 use super::event::{InputEvent, KeyInput};
-use super::state::{AppState, Mode, MessageType};
+use super::state::{AppState, MessageType, Mode};
 use crate::config::Config;
 use crossterm::event::{KeyCode, MouseEventKind};
 
@@ -32,7 +32,7 @@ fn handle_key(state: &mut AppState, key: KeyInput, config: &Config) {
     }
 }
 
-fn handle_normal_mode(state: &mut AppState, key: KeyInput, config: &Config) {
+fn handle_normal_mode(state: &mut AppState, key: KeyInput, _config: &Config) {
     // Check for quit first
     if key.code == KeyCode::Char('q') && !key.is_ctrl() {
         state.should_quit = true;
@@ -63,13 +63,14 @@ fn handle_normal_mode(state: &mut AppState, key: KeyInput, config: &Config) {
         KeyCode::Char('u') if key.is_ctrl() => state.half_page_up(),
 
         // Go to top/bottom
-        KeyCode::Char('g') => state.go_to_top(),
+        KeyCode::Char('g') if !key.is_ctrl() => state.go_to_top(),
         KeyCode::Char('G') => state.go_to_bottom(),
         KeyCode::Home => state.go_to_top(),
         KeyCode::End => state.go_to_bottom(),
 
         // Chapter navigation
-        KeyCode::Char('n') => state.next_chapter(),
+        KeyCode::Char('n') if !state.search.active => state.next_chapter(),
+        KeyCode::Char('n') if state.search.active => state.search_next(),
         KeyCode::Char('N') | KeyCode::Char('p') => state.prev_chapter(),
         KeyCode::Char(']') => state.next_chapter(),
         KeyCode::Char('[') => state.prev_chapter(),
@@ -80,7 +81,6 @@ fn handle_normal_mode(state: &mut AppState, key: KeyInput, config: &Config) {
             state.search.query.clear();
             state.search.cursor = 0;
         }
-        KeyCode::Char('n') if state.search.active => state.search_next(),
 
         // Bookmarks
         KeyCode::Char('m') => {
@@ -301,7 +301,7 @@ fn handle_mouse(state: &mut AppState, mouse: super::event::MouseInput, _config: 
 
 fn execute_command(state: &mut AppState, command: &str) {
     let parts: Vec<&str> = command.split_whitespace().collect();
-    
+
     match parts.first().map(|s| *s) {
         Some("q") | Some("quit") | Some("exit") => {
             state.should_quit = true;
@@ -324,7 +324,8 @@ fn execute_command(state: &mut AppState, command: &str) {
                         state.invalidate_cache();
                         state.show_message(format!("Chapter {}", n), MessageType::Info);
                     } else {
-                        state.show_message("Invalid chapter number".to_string(), MessageType::Error);
+                        state
+                            .show_message("Invalid chapter number".to_string(), MessageType::Error);
                     }
                 }
             }
@@ -356,7 +357,10 @@ fn execute_command(state: &mut AppState, command: &str) {
                         state.invalidate_cache();
                     }
                     _ => {
-                        state.show_message(format!("Unknown option: {:?}", parts.get(1)), MessageType::Error);
+                        state.show_message(
+                            format!("Unknown option: {:?}", parts.get(1)),
+                            MessageType::Error,
+                        );
                     }
                 }
             }

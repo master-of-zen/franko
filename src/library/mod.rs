@@ -4,7 +4,7 @@
 
 mod database;
 
-pub use database::{Annotation, Bookmark, Library, LibraryEntry};
+pub use database::{Annotation, BookStats, Bookmark, Library, LibraryEntry, LibraryStats};
 
 use crate::cli::LibraryCommand;
 use crate::config::Config;
@@ -18,18 +18,22 @@ pub async fn handle_command(cmd: LibraryCommand, config: &Config) -> Result<()> 
     let mut library = Library::new(config)?;
 
     match cmd {
-        LibraryCommand::Add { path, tags, recursive } => {
+        LibraryCommand::Add {
+            path,
+            tags,
+            recursive,
+        } => {
             if path.is_dir() {
                 // Add all books from directory
                 let mut added = 0;
                 let mut failed = 0;
-                
+
                 let walker = if recursive {
                     walkdir::WalkDir::new(&path)
                 } else {
                     walkdir::WalkDir::new(&path).max_depth(1)
                 };
-                
+
                 for entry in walker.into_iter().filter_map(|e| e.ok()) {
                     let file_path = entry.path();
                     if file_path.is_file() {
@@ -41,7 +45,11 @@ pub async fn handle_command(cmd: LibraryCommand, config: &Config) -> Result<()> 
                                         added += 1;
                                     }
                                     Err(e) => {
-                                        eprintln!("  ✗ {:?}: {}", file_path.file_name().unwrap_or_default(), e);
+                                        eprintln!(
+                                            "  ✗ {:?}: {}",
+                                            file_path.file_name().unwrap_or_default(),
+                                            e
+                                        );
                                         failed += 1;
                                     }
                                 }
@@ -49,13 +57,17 @@ pub async fn handle_command(cmd: LibraryCommand, config: &Config) -> Result<()> 
                         }
                     }
                 }
-                
+
                 println!("\nAdded {} books ({} failed)", added, failed);
                 library.save()?;
             } else {
                 // Single file
                 let entry = library.add_book(&path, Some(tags))?;
-                println!("Added: {} by {}", entry.metadata.title, entry.metadata.authors_string());
+                println!(
+                    "Added: {} by {}",
+                    entry.metadata.title,
+                    entry.metadata.authors_string()
+                );
                 library.save()?;
             }
         }
@@ -64,9 +76,15 @@ pub async fn handle_command(cmd: LibraryCommand, config: &Config) -> Result<()> 
             println!("Removed book: {}", id);
             library.save()?;
         }
-        LibraryCommand::List { format, tag, status, sort, output } => {
+        LibraryCommand::List {
+            format,
+            tag,
+            status,
+            sort: _,
+            output,
+        } => {
             let books = library.list_books(format.as_deref(), tag.as_deref(), status)?;
-            
+
             match output {
                 crate::cli::OutputFormat::Table => {
                     print_books_table(&books);
@@ -89,7 +107,12 @@ pub async fn handle_command(cmd: LibraryCommand, config: &Config) -> Result<()> 
                 }
                 crate::cli::OutputFormat::Plain => {
                     for book in books {
-                        println!("{} - {} by {}", book.id, book.metadata.title, book.metadata.authors_string());
+                        println!(
+                            "{} - {} by {}",
+                            book.id,
+                            book.metadata.title,
+                            book.metadata.authors_string()
+                        );
                     }
                 }
             }
@@ -102,34 +125,32 @@ pub async fn handle_command(cmd: LibraryCommand, config: &Config) -> Result<()> 
                 print_books_table(&results);
             }
         }
-        LibraryCommand::Info { id } => {
-            match library.get_book(&id) {
-                Some(entry) => {
-                    println!("Title:       {}", entry.metadata.title);
-                    println!("Author(s):   {}", entry.metadata.authors_string());
-                    if let Some(publisher) = &entry.metadata.publisher {
-                        println!("Publisher:   {}", publisher);
-                    }
-                    if let Some(published) = &entry.metadata.published {
-                        println!("Published:   {}", published);
-                    }
-                    if let Some(lang) = &entry.metadata.language {
-                        println!("Language:    {}", lang);
-                    }
-                    println!("Format:      {}", entry.format);
-                    println!("Progress:    {:.1}%", entry.progress * 100.0);
-                    println!("Path:        {}", entry.path.display());
-                    if !entry.tags.is_empty() {
-                        println!("Tags:        {}", entry.tags.join(", "));
-                    }
-                    if let Some(desc) = &entry.metadata.description {
-                        println!("\nDescription:");
-                        println!("{}", textwrap::wrap(desc, 80).join("\n"));
-                    }
+        LibraryCommand::Info { id } => match library.get_book(&id) {
+            Some(entry) => {
+                println!("Title:       {}", entry.metadata.title);
+                println!("Author(s):   {}", entry.metadata.authors_string());
+                if let Some(publisher) = &entry.metadata.publisher {
+                    println!("Publisher:   {}", publisher);
                 }
-                None => println!("Book not found: {}", id),
+                if let Some(published) = &entry.metadata.published {
+                    println!("Published:   {}", published);
+                }
+                if let Some(lang) = &entry.metadata.language {
+                    println!("Language:    {}", lang);
+                }
+                println!("Format:      {}", entry.format);
+                println!("Progress:    {:.1}%", entry.progress * 100.0);
+                println!("Path:        {}", entry.path.display());
+                if !entry.tags.is_empty() {
+                    println!("Tags:        {}", entry.tags.join(", "));
+                }
+                if let Some(desc) = &entry.metadata.description {
+                    println!("\nDescription:");
+                    println!("{}", textwrap::wrap(desc, 80).join("\n"));
+                }
             }
-        }
+            None => println!("Book not found: {}", id),
+        },
         LibraryCommand::Import { path, recursive } => {
             let count = library.import_directory(&path, recursive)?;
             println!("Imported {} books", count);
@@ -160,11 +181,21 @@ fn handle_bookmark_command(cmd: crate::cli::BookmarkCommand, library: &mut Libra
                 println!("No bookmarks found");
             } else {
                 for (i, bm) in bookmarks.iter().enumerate() {
-                    println!("{}. {} (Ch.{}, Block {})", i + 1, bm.name, bm.chapter + 1, bm.block + 1);
+                    println!(
+                        "{}. {} (Ch.{}, Block {})",
+                        i + 1,
+                        bm.name,
+                        bm.chapter + 1,
+                        bm.block + 1
+                    );
                 }
             }
         }
-        BookmarkCommand::Add { book_id, position, name } => {
+        BookmarkCommand::Add {
+            book_id,
+            position,
+            name,
+        } => {
             let (chapter, block) = parse_position(&position)?;
             let bookmark = library.add_bookmark(&book_id, name, chapter, block)?;
             println!("Added bookmark: {}", bookmark.name);
@@ -190,7 +221,10 @@ fn handle_bookmark_command(cmd: crate::cli::BookmarkCommand, library: &mut Libra
     Ok(())
 }
 
-fn handle_annotation_command(cmd: crate::cli::AnnotationCommand, library: &mut Library) -> Result<()> {
+fn handle_annotation_command(
+    cmd: crate::cli::AnnotationCommand,
+    library: &mut Library,
+) -> Result<()> {
     use crate::cli::AnnotationCommand;
 
     match cmd {
@@ -208,9 +242,15 @@ fn handle_annotation_command(cmd: crate::cli::AnnotationCommand, library: &mut L
                 }
             }
         }
-        AnnotationCommand::Add { book_id, position, text, color } => {
+        AnnotationCommand::Add {
+            book_id,
+            position,
+            text,
+            color,
+        } => {
             let (chapter, block) = parse_position(&position)?;
-            let annotation = library.add_annotation(&book_id, text, None, chapter, block, color)?;
+            let _annotation =
+                library.add_annotation(&book_id, text, None, chapter, block, color)?;
             println!("Added annotation");
             library.save()?;
         }
@@ -272,7 +312,10 @@ fn print_books_table(books: &[LibraryEntry]) {
         format_width = format_width,
         progress_width = progress_width,
     );
-    println!("{}", "-".repeat(id_width + title_width + author_width + format_width + progress_width + 8));
+    println!(
+        "{}",
+        "-".repeat(id_width + title_width + author_width + format_width + progress_width + 8)
+    );
 
     // Rows
     for book in books {

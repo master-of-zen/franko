@@ -10,7 +10,7 @@
 mod keybindings;
 mod theme;
 
-pub use keybindings::{Action, Keybindings};
+pub use keybindings::Keybindings;
 pub use theme::ThemeConfig;
 
 use crate::cli::ConfigCommand;
@@ -187,7 +187,7 @@ pub struct WebConfig {
 
     /// Line height
     pub line_height: f32,
-    
+
     /// Automatically open browser when starting web server
     pub open_browser: bool,
 }
@@ -273,9 +273,27 @@ pub struct ReaderConfig {
 
     /// Hyphenation language
     pub hyphenation_lang: String,
-    
+
     /// Preferred interface ("tui" or "web")
     pub prefer_interface: String,
+
+    /// Reading layout mode: "scroll", "paged", "dual"
+    pub layout_mode: String,
+
+    /// Pages per view (1, 2, or 3) for paged/dual mode
+    pub pages_per_view: u8,
+
+    /// Page turn animation: "none", "slide", "fade", "flip"
+    pub page_animation: String,
+
+    /// Show page numbers in paged mode
+    pub show_page_numbers: bool,
+
+    /// Auto-scroll speed (0 to disable, 1-10 for speed)
+    pub auto_scroll_speed: u8,
+
+    /// Page gap in pixels for multi-page view
+    pub page_gap: u16,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -491,6 +509,12 @@ impl Default for ReaderConfig {
             hyphenation: true,
             hyphenation_lang: "en-us".to_string(),
             prefer_interface: "tui".to_string(),
+            layout_mode: "scroll".to_string(),
+            pages_per_view: 1,
+            page_animation: "slide".to_string(),
+            show_page_numbers: true,
+            auto_scroll_speed: 0,
+            page_gap: 40,
         }
     }
 }
@@ -670,9 +694,7 @@ pub fn handle_command(cmd: ConfigCommand, config: &Config) -> Result<()> {
         ConfigCommand::Edit => {
             let path = config_path()?;
             let editor = std::env::var("EDITOR").unwrap_or_else(|_| "vi".to_string());
-            std::process::Command::new(&editor)
-                .arg(&path)
-                .status()?;
+            std::process::Command::new(&editor).arg(&path).status()?;
         }
         ConfigCommand::Themes => {
             println!("Available themes:");
@@ -694,7 +716,7 @@ pub fn handle_command(cmd: ConfigCommand, config: &Config) -> Result<()> {
 fn get_config_value(config: &Config, key: &str) -> Result<String> {
     // Convert config to TOML value for dynamic access
     let value = toml::Value::try_from(config)?;
-    
+
     let parts: Vec<&str> = key.split('.').collect();
     let mut current = &value;
 
@@ -710,7 +732,7 @@ fn get_config_value(config: &Config, key: &str) -> Result<String> {
 fn set_config_value(config: &mut Config, key: &str, value: &str) -> Result<()> {
     // This is a simplified implementation - in production you'd want proper type handling
     let mut toml_value = toml::Value::try_from(config.clone())?;
-    
+
     let parts: Vec<&str> = key.split('.').collect();
     let mut current = &mut toml_value;
 
@@ -730,7 +752,7 @@ fn set_config_value(config: &mut Config, key: &str, value: &str) -> Result<()> {
                 } else {
                     toml::Value::String(value.to_string())
                 };
-                
+
                 table.insert(part.to_string(), new_value);
             }
         } else {

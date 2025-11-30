@@ -43,28 +43,24 @@ fn parse_markdown(source: &str) -> (BookMetadata, BookContent) {
         if let Some(end) = source[3..].find("---") {
             let frontmatter = &source[3..3 + end];
             content_start = 3 + end + 3;
-            
+
             // Simple YAML parsing for common fields
             for line in frontmatter.lines() {
                 if let Some((key, value)) = line.split_once(':') {
                     let key = key.trim().to_lowercase();
                     let value = value.trim().trim_matches(&['"', '\''][..]).to_string();
-                    
+
                     match key.as_str() {
                         "title" => metadata.title = value,
                         "author" | "authors" => {
-                            metadata.authors = value
-                                .split(',')
-                                .map(|s| s.trim().to_string())
-                                .collect();
+                            metadata.authors =
+                                value.split(',').map(|s| s.trim().to_string()).collect();
                         }
                         "date" | "published" => metadata.published = Some(value),
                         "description" | "summary" => metadata.description = Some(value),
                         "tags" | "subjects" => {
-                            metadata.subjects = value
-                                .split(',')
-                                .map(|s| s.trim().to_string())
-                                .collect();
+                            metadata.subjects =
+                                value.split(',').map(|s| s.trim().to_string()).collect();
                         }
                         "lang" | "language" => metadata.language = Some(value),
                         _ => {}
@@ -100,9 +96,7 @@ fn parse_markdown_content(source: &str) -> BookContent {
     let mut blocks = Vec::new();
     let mut toc = Vec::new();
     let mut current_text = String::new();
-    let mut in_heading = false;
     let mut heading_level = 0u8;
-    let mut in_list = false;
     let mut list_ordered = false;
     let mut list_items = Vec::new();
     let mut in_code_block = false;
@@ -110,7 +104,6 @@ fn parse_markdown_content(source: &str) -> BookContent {
     let mut code_content = String::new();
     let mut in_quote = false;
     let mut quote_text = String::new();
-    let mut in_table = false;
     let mut table_headers = Vec::new();
     let mut table_rows = Vec::new();
     let mut current_row = Vec::new();
@@ -119,7 +112,6 @@ fn parse_markdown_content(source: &str) -> BookContent {
         match event {
             Event::Start(Tag::Heading { level, .. }) => {
                 flush_text(&mut current_text, &mut blocks);
-                in_heading = true;
                 heading_level = match level {
                     HeadingLevel::H1 => 1,
                     HeadingLevel::H2 => 2,
@@ -131,7 +123,7 @@ fn parse_markdown_content(source: &str) -> BookContent {
             }
             Event::End(TagEnd::Heading(_)) => {
                 let text = std::mem::take(&mut current_text);
-                
+
                 // Add to TOC
                 if heading_level <= 3 {
                     toc.push(TocEntry::new(
@@ -140,12 +132,11 @@ fn parse_markdown_content(source: &str) -> BookContent {
                         (heading_level - 1) as usize,
                     ));
                 }
-                
+
                 blocks.push(ContentBlock::Heading {
                     level: heading_level,
                     text,
                 });
-                in_heading = false;
             }
             Event::Start(Tag::Paragraph) => {}
             Event::End(TagEnd::Paragraph) => {
@@ -153,7 +144,6 @@ fn parse_markdown_content(source: &str) -> BookContent {
             }
             Event::Start(Tag::List(ordered)) => {
                 flush_text(&mut current_text, &mut blocks);
-                in_list = true;
                 list_ordered = ordered.is_some();
                 list_items.clear();
             }
@@ -162,7 +152,6 @@ fn parse_markdown_content(source: &str) -> BookContent {
                     ordered: list_ordered,
                     items: std::mem::take(&mut list_items),
                 });
-                in_list = false;
             }
             Event::Start(Tag::Item) => {
                 current_text.clear();
@@ -176,7 +165,11 @@ fn parse_markdown_content(source: &str) -> BookContent {
                 code_lang = match kind {
                     pulldown_cmark::CodeBlockKind::Fenced(lang) => {
                         let lang = lang.to_string();
-                        if lang.is_empty() { None } else { Some(lang) }
+                        if lang.is_empty() {
+                            None
+                        } else {
+                            Some(lang)
+                        }
                     }
                     _ => None,
                 };
@@ -203,7 +196,6 @@ fn parse_markdown_content(source: &str) -> BookContent {
             }
             Event::Start(Tag::Table(_)) => {
                 flush_text(&mut current_text, &mut blocks);
-                in_table = true;
                 table_headers.clear();
                 table_rows.clear();
             }
@@ -212,7 +204,6 @@ fn parse_markdown_content(source: &str) -> BookContent {
                     headers: std::mem::take(&mut table_headers),
                     rows: std::mem::take(&mut table_rows),
                 });
-                in_table = false;
             }
             Event::Start(Tag::TableHead) => {
                 current_row.clear();
@@ -234,12 +225,18 @@ fn parse_markdown_content(source: &str) -> BookContent {
             Event::End(TagEnd::TableCell) => {
                 current_row.push(std::mem::take(&mut current_text));
             }
-            Event::Start(Tag::Image { dest_url, title, .. }) => {
+            Event::Start(Tag::Image {
+                dest_url, title, ..
+            }) => {
                 flush_text(&mut current_text, &mut blocks);
                 blocks.push(ContentBlock::Image {
                     src: dest_url.to_string(),
                     alt: None,
-                    caption: if title.is_empty() { None } else { Some(title.to_string()) },
+                    caption: if title.is_empty() {
+                        None
+                    } else {
+                        Some(title.to_string())
+                    },
                     data: None,
                 });
             }

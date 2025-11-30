@@ -1,6 +1,6 @@
 // Franko Reader - JavaScript
 
-(function() {
+(function () {
     'use strict';
 
     // DOM Elements
@@ -12,12 +12,29 @@
     const increaseFontBtn = document.getElementById('increase-font');
     const decreaseFontBtn = document.getElementById('decrease-font');
     const toggleThemeBtn = document.getElementById('toggle-theme');
+    const toggleFullscreenBtn = document.getElementById('toggle-fullscreen');
     const searchInput = document.getElementById('search');
+    const readerContainer = document.getElementById('reader-container');
+    const pageControls = document.getElementById('page-controls');
+    const pageIndicator = document.getElementById('page-indicator');
+    const pagePrevBtn = document.getElementById('page-prev');
+    const pageNextBtn = document.getElementById('page-next');
 
     // State
     let fontSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--font-size')) || 16;
     const minFontSize = 12;
     const maxFontSize = 32;
+
+    // Layout state
+    let currentLayout = 'scroll';
+    let currentPage = 0;
+    let totalPages = 1;
+    let pagesPerView = 1;
+    let autoScrollSpeed = 0;
+    let autoScrollInterval = null;
+    let pageGap = 40;
+    let pageAnimation = 'slide';
+    let originalContent = '';
 
     // Initialize
     function init() {
@@ -26,6 +43,12 @@
         loadSettings();
         initAnimations();
         initSearch();
+        initLayoutControls();
+
+        // Store original content for paged mode
+        if (content) {
+            originalContent = content.innerHTML;
+        }
     }
 
     // Event Listeners
@@ -40,8 +63,8 @@
 
         // Close sidebar when clicking outside
         document.addEventListener('click', (e) => {
-            if (sidebar && sidebar.classList.contains('open') && 
-                !sidebar.contains(e.target) && 
+            if (sidebar && sidebar.classList.contains('open') &&
+                !sidebar.contains(e.target) &&
                 e.target !== toggleSidebarBtn) {
                 sidebar.classList.remove('open');
             }
@@ -58,6 +81,11 @@
         // Theme toggle
         if (toggleThemeBtn) {
             toggleThemeBtn.addEventListener('click', toggleTheme);
+        }
+
+        // Fullscreen toggle
+        if (toggleFullscreenBtn) {
+            toggleFullscreenBtn.addEventListener('click', toggleFullscreen);
         }
 
         // Scroll progress
@@ -79,12 +107,280 @@
                 }
             });
         });
+
+        // Page navigation
+        if (pagePrevBtn) {
+            pagePrevBtn.addEventListener('click', prevPage);
+        }
+        if (pageNextBtn) {
+            pageNextBtn.addEventListener('click', nextPage);
+        }
+
+        // Handle window resize for paged layout
+        window.addEventListener('resize', debounce(() => {
+            if (currentLayout !== 'scroll') {
+                recalculatePages();
+            }
+        }, 250));
     }
+
+    // Initialize layout controls
+    function initLayoutControls() {
+        const layoutBtns = document.querySelectorAll('.layout-btn');
+        layoutBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const layout = btn.dataset.layout;
+                setLayout(layout);
+
+                // Update active state
+                layoutBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+    }
+
+    // Set layout mode
+    function setLayout(layout) {
+        currentLayout = layout;
+
+        if (readerContainer) {
+            readerContainer.dataset.layout = layout;
+        }
+
+        // Show/hide page controls
+        if (pageControls) {
+            pageControls.style.display = layout === 'scroll' ? 'none' : 'flex';
+        }
+
+        // Handle layout-specific setup
+        if (layout === 'scroll') {
+            exitPagedMode();
+        } else {
+            enterPagedMode(layout);
+        }
+
+        saveSetting('layoutMode', layout);
+        showToast(`Layout: ${layout.charAt(0).toUpperCase() + layout.slice(1)}`);
+    }
+
+    // Enter paged mode
+    function enterPagedMode(layout) {
+        if (!content || !readerContainer) return;
+
+        pagesPerView = layout === 'dual' ? 2 : 1;
+        readerContainer.dataset.pages = pagesPerView;
+
+        // Disable scrolling
+        readerContainer.style.overflow = 'hidden';
+
+        // Paginate content
+        paginateContent();
+
+        // Update page indicator
+        updatePageIndicator();
+    }
+
+    // Exit paged mode
+    function exitPagedMode() {
+        if (!content || !readerContainer) return;
+
+        // Restore original content
+        content.innerHTML = originalContent;
+
+        // Re-enable scrolling
+        readerContainer.style.overflow = '';
+        readerContainer.dataset.pages = '1';
+
+        // Reset state
+        currentPage = 0;
+        totalPages = 1;
+    }
+
+    // Paginate content for paged mode
+    function paginateContent() {
+        if (!content) return;
+
+        const containerHeight = readerContainer.clientHeight - 60; // Account for padding
+        const containerWidth = readerContainer.clientWidth;
+
+        // Create a temporary container to measure content
+        const tempContainer = document.createElement('div');
+        tempContainer.style.cssText = `
+            position: absolute;
+            visibility: hidden;
+            width: ${pagesPerView === 2 ? containerWidth / 2 - pageGap : containerWidth - 80}px;
+            font-family: var(--font-family-reading);
+            font-size: var(--font-size);
+            line-height: var(--line-height);
+            padding: 2rem;
+        `;
+        tempContainer.innerHTML = originalContent;
+        document.body.appendChild(tempContainer);
+
+        // Calculate approximate number of pages
+        const contentHeight = tempContainer.scrollHeight;
+        totalPages = Math.max(1, Math.ceil(contentHeight / containerHeight));
+
+        document.body.removeChild(tempContainer);
+
+        // Set up CSS columns for pagination
+        content.style.cssText = `
+            height: ${containerHeight}px;
+            column-count: ${totalPages * pagesPerView};
+            column-gap: ${pageGap}px;
+            column-fill: auto;
+            overflow: hidden;
+        `;
+
+        currentPage = 0;
+        goToPage(0);
+    }
+
+    // Recalculate pages on resize
+    function recalculatePages() {
+        if (currentLayout !== 'scroll') {
+            paginateContent();
+        }
+    }
+
+    // Go to specific page
+    function goToPage(pageNum) {
+        if (!content) return;
+
+        pageNum = Math.max(0, Math.min(pageNum, totalPages - 1));
+        currentPage = pageNum;
+
+        const containerWidth = readerContainer.clientWidth;
+        const pageWidth = pagesPerView === 2
+            ? (containerWidth / 2 + pageGap / 2)
+            : (containerWidth - 40);
+
+        const offset = pageNum * pageWidth * pagesPerView;
+
+        // Apply animation class
+        content.classList.remove('page-animation-slide', 'page-animation-fade', 'page-animation-flip');
+        if (pageAnimation !== 'none') {
+            content.classList.add(`page-animation-${pageAnimation}`);
+        }
+
+        content.style.transform = `translateX(-${offset}px)`;
+        content.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+
+        updatePageIndicator();
+        updatePageButtons();
+
+        // Save current page
+        saveSetting('currentPage', currentPage);
+    }
+
+    // Navigate to previous page
+    function prevPage() {
+        if (currentPage > 0) {
+            goToPage(currentPage - 1);
+        }
+    }
+
+    // Navigate to next page
+    function nextPage() {
+        if (currentPage < totalPages - 1) {
+            goToPage(currentPage + 1);
+        }
+    }
+
+    // Update page indicator
+    function updatePageIndicator() {
+        if (pageIndicator) {
+            const displayPage = currentPage + 1;
+            if (pagesPerView === 2 && totalPages > 1) {
+                const endPage = Math.min(displayPage + 1, totalPages);
+                pageIndicator.textContent = `Pages ${displayPage}-${endPage} of ${totalPages}`;
+            } else {
+                pageIndicator.textContent = `Page ${displayPage} of ${totalPages}`;
+            }
+        }
+    }
+
+    // Update page navigation buttons
+    function updatePageButtons() {
+        if (pagePrevBtn) {
+            pagePrevBtn.disabled = currentPage === 0;
+        }
+        if (pageNextBtn) {
+            pageNextBtn.disabled = currentPage >= totalPages - 1;
+        }
+    }
+
+    // Toggle fullscreen
+    function toggleFullscreen() {
+        const readerLayout = document.querySelector('.reader-layout');
+        if (!readerLayout) return;
+
+        if (document.fullscreenElement) {
+            document.exitFullscreen();
+            readerLayout.classList.remove('fullscreen');
+        } else {
+            readerLayout.requestFullscreen().catch(() => { });
+            readerLayout.classList.add('fullscreen');
+        }
+    }
+
+    // Auto-scroll functionality
+    function startAutoScroll(speed) {
+        stopAutoScroll();
+        autoScrollSpeed = speed;
+
+        if (speed > 0 && currentLayout === 'scroll') {
+            const pixelsPerSecond = speed * 10;
+            autoScrollInterval = setInterval(() => {
+                window.scrollBy(0, pixelsPerSecond / 60);
+
+                // Check if reached bottom
+                if ((window.innerHeight + window.scrollY) >= document.documentElement.scrollHeight) {
+                    stopAutoScroll();
+                }
+            }, 1000 / 60);
+
+            showAutoScrollIndicator(true);
+        }
+
+        saveSetting('autoScrollSpeed', speed);
+    }
+
+    function stopAutoScroll() {
+        if (autoScrollInterval) {
+            clearInterval(autoScrollInterval);
+            autoScrollInterval = null;
+        }
+        autoScrollSpeed = 0;
+        showAutoScrollIndicator(false);
+    }
+
+    function showAutoScrollIndicator(show) {
+        let indicator = document.querySelector('.auto-scroll-indicator');
+
+        if (show) {
+            if (!indicator) {
+                indicator = document.createElement('div');
+                indicator.className = 'auto-scroll-indicator';
+                indicator.innerHTML = `
+                    <span>Auto-scrolling</span>
+                    <button onclick="window.frankoStopAutoScroll()">Stop</button>
+                `;
+                document.body.appendChild(indicator);
+            }
+            indicator.classList.add('active');
+        } else if (indicator) {
+            indicator.classList.remove('active');
+        }
+    }
+
+    // Expose stop function globally
+    window.frankoStopAutoScroll = stopAutoScroll;
 
     // Throttle function for performance
     function throttle(func, limit) {
         let inThrottle;
-        return function(...args) {
+        return function (...args) {
             if (!inThrottle) {
                 func.apply(this, args);
                 inThrottle = true;
@@ -126,7 +422,7 @@
     // Debounce function
     function debounce(func, wait) {
         let timeout;
-        return function(...args) {
+        return function (...args) {
             clearTimeout(timeout);
             timeout = setTimeout(() => func.apply(this, args), wait);
         };
@@ -136,11 +432,11 @@
     function handleSearch(e) {
         const query = e.target.value.toLowerCase().trim();
         const cards = document.querySelectorAll('.book-card, .library-card, .library-table tbody tr');
-        
+
         cards.forEach(card => {
             const title = card.querySelector('h3, .title, td:first-child')?.textContent?.toLowerCase() || '';
             const author = card.querySelector('.author, td:nth-child(2)')?.textContent?.toLowerCase() || '';
-            
+
             if (title.includes(query) || author.includes(query) || query === '') {
                 card.style.display = '';
                 card.style.opacity = '1';
@@ -154,7 +450,7 @@
     function toggleSidebar() {
         if (sidebar) {
             sidebar.classList.toggle('open');
-            
+
             // Add overlay
             let overlay = document.querySelector('.sidebar-overlay');
             if (sidebar.classList.contains('open')) {
@@ -184,7 +480,7 @@
     function changeFontSize(delta) {
         fontSize = Math.max(minFontSize, Math.min(maxFontSize, fontSize + delta));
         document.documentElement.style.setProperty('--font-size', fontSize + 'px');
-        
+
         // Show feedback
         showToast(`Font size: ${fontSize}px`);
         saveSettings();
@@ -194,7 +490,7 @@
     function toggleTheme() {
         const html = document.documentElement;
         const isDark = html.classList.contains('dark') || !html.classList.contains('light');
-        
+
         if (isDark) {
             html.classList.remove('dark');
             html.classList.add('light');
@@ -204,7 +500,7 @@
             html.classList.add('dark');
             showToast('Dark mode');
         }
-        
+
         saveSettings();
     }
 
@@ -233,11 +529,11 @@
             `;
             document.body.appendChild(toast);
         }
-        
+
         toast.textContent = message;
         toast.style.opacity = '1';
         toast.style.transform = 'translateX(-50%) translateY(0)';
-        
+
         setTimeout(() => {
             toast.style.opacity = '0';
             toast.style.transform = 'translateX(-50%) translateY(20px)';
@@ -251,7 +547,7 @@
         const scrollTop = window.scrollY;
         const docHeight = document.documentElement.scrollHeight - window.innerHeight;
         const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-        
+
         progressFill.style.width = progress + '%';
     }
 
@@ -265,29 +561,56 @@
         switch (e.key) {
             case 'ArrowLeft':
             case 'h':
-                navigatePrev();
+                if (currentLayout !== 'scroll') {
+                    e.preventDefault();
+                    prevPage();
+                } else {
+                    navigatePrev();
+                }
                 break;
             case 'ArrowRight':
             case 'l':
-                navigateNext();
+                if (currentLayout !== 'scroll') {
+                    e.preventDefault();
+                    nextPage();
+                } else {
+                    navigateNext();
+                }
                 break;
             case 'j':
-                window.scrollBy({ top: 100, behavior: 'smooth' });
+                if (currentLayout === 'scroll') {
+                    window.scrollBy({ top: 100, behavior: 'smooth' });
+                }
                 break;
             case 'k':
-                window.scrollBy({ top: -100, behavior: 'smooth' });
+                if (currentLayout === 'scroll') {
+                    window.scrollBy({ top: -100, behavior: 'smooth' });
+                }
                 break;
             case ' ':
-                if (!e.shiftKey) {
-                    e.preventDefault();
-                    window.scrollBy({ top: window.innerHeight - 100, behavior: 'smooth' });
+                e.preventDefault();
+                if (currentLayout !== 'scroll') {
+                    if (e.shiftKey) {
+                        prevPage();
+                    } else {
+                        nextPage();
+                    }
                 } else {
-                    e.preventDefault();
-                    window.scrollBy({ top: -(window.innerHeight - 100), behavior: 'smooth' });
+                    if (!e.shiftKey) {
+                        window.scrollBy({ top: window.innerHeight - 100, behavior: 'smooth' });
+                    } else {
+                        window.scrollBy({ top: -(window.innerHeight - 100), behavior: 'smooth' });
+                    }
                 }
                 break;
             case 'g':
-                if (e.shiftKey) {
+                if (currentLayout !== 'scroll') {
+                    if (e.shiftKey) {
+                        goToPage(totalPages - 1);
+                    } else {
+                        goToPage(0);
+                    }
+                } else if (e.shiftKey) {
                     window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
                 } else {
                     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -306,6 +629,18 @@
             case 'd':
                 toggleTheme();
                 break;
+            case 'f':
+                toggleFullscreen();
+                break;
+            case '1':
+                setLayout('scroll');
+                break;
+            case '2':
+                setLayout('paged');
+                break;
+            case '3':
+                setLayout('dual');
+                break;
             case '/':
                 e.preventDefault();
                 openSearch();
@@ -314,6 +649,7 @@
                 if (sidebar && sidebar.classList.contains('open')) {
                     toggleSidebar();
                 }
+                stopAutoScroll();
                 break;
         }
     }
@@ -358,17 +694,17 @@
         if (saved) {
             try {
                 const settings = JSON.parse(saved);
-                
+
                 if (settings.fontSize) {
                     fontSize = settings.fontSize;
                     document.documentElement.style.setProperty('--font-size', fontSize + 'px');
                 }
-                
+
                 if (settings.theme) {
                     document.documentElement.classList.remove('dark', 'light');
                     document.documentElement.classList.add(settings.theme);
                 }
-                
+
                 // Load font family
                 if (settings.fontFamily) {
                     const families = {
@@ -386,12 +722,12 @@
                         document.documentElement.style.setProperty('--font-family-reading', families[settings.fontFamily]);
                     }
                 }
-                
+
                 // Load line height
                 if (settings.lineHeight) {
                     document.documentElement.style.setProperty('--line-height', settings.lineHeight);
                 }
-                
+
                 // Load text width
                 if (settings.textWidth) {
                     const widths = { narrow: '600px', medium: '800px', wide: '1000px', full: '100%' };
@@ -399,7 +735,7 @@
                         document.documentElement.style.setProperty('--text-width', widths[settings.textWidth]);
                     }
                 }
-                
+
                 // Load accent color
                 if (settings.accentColor) {
                     const colors = {
@@ -416,6 +752,38 @@
                         document.documentElement.style.setProperty('--accent-primary', colors[settings.accentColor].primary);
                         document.documentElement.style.setProperty('--accent-secondary', colors[settings.accentColor].secondary);
                     }
+                }
+
+                // Load layout mode
+                if (settings.layoutMode) {
+                    currentLayout = settings.layoutMode;
+                    // Apply after DOM is ready
+                    setTimeout(() => {
+                        setLayout(settings.layoutMode);
+                        // Update active button
+                        document.querySelectorAll('.layout-btn').forEach(btn => {
+                            btn.classList.toggle('active', btn.dataset.layout === settings.layoutMode);
+                        });
+                    }, 100);
+                }
+
+                // Load page gap
+                if (settings.pageGap) {
+                    pageGap = settings.pageGap;
+                }
+
+                // Load page animation
+                if (settings.pageAnimation) {
+                    pageAnimation = settings.pageAnimation;
+                }
+
+                // Load current page for paged mode
+                if (settings.currentPage) {
+                    setTimeout(() => {
+                        if (currentLayout !== 'scroll') {
+                            goToPage(settings.currentPage);
+                        }
+                    }, 200);
                 }
             } catch (e) {
                 console.error('Failed to load settings', e);
@@ -499,7 +867,7 @@
             btn.addEventListener('click', () => {
                 const theme = btn.dataset.theme;
                 setTheme(theme);
-                
+
                 // Update active state
                 document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
@@ -511,7 +879,7 @@
             btn.addEventListener('click', () => {
                 const color = btn.dataset.color;
                 setAccentColor(color);
-                
+
                 document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
             });
@@ -623,7 +991,7 @@
             orange: { primary: '#f97316', secondary: '#fb923c' },
             red: { primary: '#ef4444', secondary: '#f87171' }
         };
-        
+
         if (colors[color]) {
             document.documentElement.style.setProperty('--accent-primary', colors[color].primary);
             document.documentElement.style.setProperty('--accent-secondary', colors[color].secondary);
@@ -644,7 +1012,7 @@
             fira: '"Fira Code", ui-monospace, monospace',
             opendyslexic: '"OpenDyslexic", sans-serif'
         };
-        
+
         const familyNames = {
             system: 'System',
             serif: 'Serif',
@@ -656,7 +1024,7 @@
             fira: 'Fira Code',
             opendyslexic: 'OpenDyslexic'
         };
-        
+
         if (families[family]) {
             document.documentElement.style.setProperty('--font-family-reading', families[family]);
             saveSetting('fontFamily', family);
@@ -668,7 +1036,7 @@
         document.documentElement.style.setProperty('--font-size', size + 'px');
         fontSize = size;
         saveSetting('fontSize', size);
-        
+
         const display = document.querySelector('.font-size-display');
         if (display) display.textContent = size + 'px';
     }
@@ -685,7 +1053,7 @@
             wide: '1000px',
             full: '100%'
         };
-        
+
         if (widths[width]) {
             document.documentElement.style.setProperty('--text-width', widths[width]);
             saveSetting('textWidth', width);
@@ -701,61 +1069,61 @@
     function saveAllSettings() {
         // Gather all settings from the page
         const settings = {};
-        
+
         // Theme
         const activeTheme = document.querySelector('.theme-btn.active');
         if (activeTheme) settings.theme = activeTheme.dataset.theme;
-        
+
         // Color
         const activeColor = document.querySelector('.color-btn.active');
         if (activeColor) settings.accentColor = activeColor.dataset.color;
-        
+
         // Font family
         const fontFamily = document.getElementById('font-family');
         if (fontFamily) settings.fontFamily = fontFamily.value;
-        
+
         // Font size
         const fontSizeRange = document.getElementById('font-size-range');
         if (fontSizeRange) settings.fontSize = parseInt(fontSizeRange.value);
-        
+
         // Line height
         const lineHeight = document.getElementById('line-height');
         if (lineHeight) settings.lineHeight = lineHeight.value;
-        
+
         // Text width
         const textWidth = document.getElementById('text-width');
         if (textWidth) settings.textWidth = textWidth.value;
-        
+
         // Toggles
         document.querySelectorAll('.toggle input').forEach(toggle => {
             settings[toggle.id] = toggle.checked;
         });
-        
+
         // Sync URL
         const syncUrl = document.getElementById('sync-url');
         if (syncUrl) settings.syncUrl = syncUrl.value;
-        
+
         // Sync interval
         const syncInterval = document.getElementById('sync-interval');
         if (syncInterval) settings.syncInterval = syncInterval.value;
-        
+
         localStorage.setItem('franko-settings', JSON.stringify(settings));
     }
 
     function loadSettingsPage() {
         const saved = localStorage.getItem('franko-settings');
         if (!saved) return;
-        
+
         try {
             const settings = JSON.parse(saved);
-            
+
             // Theme
             if (settings.theme) {
                 document.querySelectorAll('.theme-btn').forEach(btn => {
                     btn.classList.toggle('active', btn.dataset.theme === settings.theme);
                 });
             }
-            
+
             // Color
             if (settings.accentColor) {
                 document.querySelectorAll('.color-btn').forEach(btn => {
@@ -763,13 +1131,13 @@
                 });
                 setAccentColor(settings.accentColor);
             }
-            
+
             // Font family
             if (settings.fontFamily) {
                 const fontFamily = document.getElementById('font-family');
                 if (fontFamily) fontFamily.value = settings.fontFamily;
             }
-            
+
             // Font size
             if (settings.fontSize) {
                 const fontSizeRange = document.getElementById('font-size-range');
@@ -777,32 +1145,32 @@
                 const display = document.querySelector('.font-size-display');
                 if (display) display.textContent = settings.fontSize + 'px';
             }
-            
+
             // Line height
             if (settings.lineHeight) {
                 const lineHeight = document.getElementById('line-height');
                 if (lineHeight) lineHeight.value = settings.lineHeight;
             }
-            
+
             // Text width
             if (settings.textWidth) {
                 const textWidth = document.getElementById('text-width');
                 if (textWidth) textWidth.value = settings.textWidth;
             }
-            
+
             // Toggles
             document.querySelectorAll('.toggle input').forEach(toggle => {
                 if (settings[toggle.id] !== undefined) {
                     toggle.checked = settings[toggle.id];
                 }
             });
-            
+
             // Sync URL
             if (settings.syncUrl) {
                 const syncUrl = document.getElementById('sync-url');
                 if (syncUrl) syncUrl.value = settings.syncUrl;
             }
-            
+
             // Sync interval
             if (settings.syncInterval) {
                 const syncInterval = document.getElementById('sync-interval');

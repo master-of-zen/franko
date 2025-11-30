@@ -10,10 +10,7 @@ mod templates;
 use crate::config::Config;
 use crate::formats::Book;
 use anyhow::Result;
-use axum::{
-    routing::get,
-    Router,
-};
+use axum::{routing::get, Router};
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -34,7 +31,7 @@ pub struct AppState {
 pub async fn serve(config: &Config, bind: String, port: u16) -> Result<()> {
     // Initialize library
     let library = crate::library::Library::new(config)?;
-    
+
     let state = Arc::new(AppState {
         config: config.clone(),
         library: Arc::new(RwLock::new(library)),
@@ -81,7 +78,7 @@ pub async fn serve_book(book: Book, config: &Config) -> Result<()> {
     let library = crate::library::Library::new(config)?;
     let port = config.web.port;
     let bind = config.web.bind.clone();
-    
+
     let state = Arc::new(AppState {
         config: config.clone(),
         library: Arc::new(RwLock::new(library)),

@@ -132,8 +132,8 @@ impl Library {
         let content = std::fs::read_to_string(path)
             .with_context(|| format!("Failed to read library file: {}", path.display()))?;
 
-        let mut library: Library = serde_json::from_str(&content)
-            .with_context(|| "Failed to parse library file")?;
+        let mut library: Library =
+            serde_json::from_str(&content).with_context(|| "Failed to parse library file")?;
 
         library.db_path = path.to_path_buf();
         library.config = config;
@@ -246,7 +246,9 @@ impl Library {
                         crate::cli::ReadingStatus::Unread => b.status == ReadingStatus::Unread,
                         crate::cli::ReadingStatus::Reading => b.status == ReadingStatus::Reading,
                         crate::cli::ReadingStatus::Finished => b.status == ReadingStatus::Finished,
-                        crate::cli::ReadingStatus::Abandoned => b.status == ReadingStatus::Abandoned,
+                        crate::cli::ReadingStatus::Abandoned => {
+                            b.status == ReadingStatus::Abandoned
+                        }
                     };
                     if !matches {
                         return false;
@@ -409,7 +411,7 @@ impl Library {
         if let Some(entry) = self.books.get_mut(book_id) {
             let len_before = entry.bookmarks.len();
             entry.bookmarks.retain(|b| b.id != bookmark_id);
-            
+
             if entry.bookmarks.len() < len_before {
                 Ok(())
             } else {
@@ -463,7 +465,7 @@ impl Library {
         if let Some(entry) = self.books.get_mut(book_id) {
             let len_before = entry.annotations.len();
             entry.annotations.retain(|a| a.id != annotation_id);
-            
+
             if entry.annotations.len() < len_before {
                 Ok(())
             } else {
@@ -472,6 +474,143 @@ impl Library {
         } else {
             anyhow::bail!("Book not found: {}", book_id)
         }
+    }
+
+    /// Update reading time for a book
+    pub fn update_reading_time(&mut self, book_id: &str, seconds: u64) -> Result<()> {
+        if let Some(entry) = self.books.get_mut(book_id) {
+            entry.reading_time += seconds;
+            entry.last_read = Some(Utc::now());
+            Ok(())
+        } else {
+            anyhow::bail!("Book not found: {}", book_id)
+        }
+    }
+
+    /// Get reading statistics for a book
+    pub fn get_book_stats(&self, book_id: &str) -> Option<BookStats> {
+        self.books.get(book_id).map(|entry| BookStats {
+            book_id: entry.id.clone(),
+            title: entry.metadata.title.clone(),
+            progress: entry.progress,
+            reading_time_seconds: entry.reading_time,
+            reading_time_formatted: format_duration(entry.reading_time),
+            status: entry.status,
+            last_read: entry.last_read,
+            added_at: entry.added_at,
+            bookmarks_count: entry.bookmarks.len(),
+            annotations_count: entry.annotations.len(),
+        })
+    }
+
+    /// Get overall library statistics
+    pub fn get_library_stats(&self) -> LibraryStats {
+        let books: Vec<&LibraryEntry> = self.books.values().collect();
+
+        let total_books = books.len();
+        let books_finished = books
+            .iter()
+            .filter(|b| b.status == ReadingStatus::Finished)
+            .count();
+        let books_reading = books
+            .iter()
+            .filter(|b| b.status == ReadingStatus::Reading)
+            .count();
+        let books_unread = books
+            .iter()
+            .filter(|b| b.status == ReadingStatus::Unread)
+            .count();
+
+        let total_reading_time: u64 = books.iter().map(|b| b.reading_time).sum();
+        let total_bookmarks: usize = books.iter().map(|b| b.bookmarks.len()).sum();
+        let total_annotations: usize = books.iter().map(|b| b.annotations.len()).sum();
+
+        // Count by format
+        let mut formats: HashMap<String, usize> = HashMap::new();
+        for book in &books {
+            *formats.entry(book.format.clone()).or_insert(0) += 1;
+        }
+
+        // Recent reading activity (last 30 days)
+        let thirty_days_ago = Utc::now() - chrono::Duration::days(30);
+        let recently_read: Vec<String> = books
+            .iter()
+            .filter(|b| b.last_read.map(|d| d > thirty_days_ago).unwrap_or(false))
+            .map(|b| b.id.clone())
+            .collect();
+
+        // Calculate average progress for books being read
+        let in_progress: Vec<&&LibraryEntry> = books
+            .iter()
+            .filter(|b| b.status == ReadingStatus::Reading)
+            .collect();
+        let avg_progress = if in_progress.is_empty() {
+            0.0
+        } else {
+            in_progress.iter().map(|b| b.progress).sum::<f64>() / in_progress.len() as f64
+        };
+
+        LibraryStats {
+            total_books,
+            books_finished,
+            books_reading,
+            books_unread,
+            books_abandoned: books
+                .iter()
+                .filter(|b| b.status == ReadingStatus::Abandoned)
+                .count(),
+            total_reading_time_seconds: total_reading_time,
+            total_reading_time_formatted: format_duration(total_reading_time),
+            total_bookmarks,
+            total_annotations,
+            formats,
+            recently_read_count: recently_read.len(),
+            average_progress: avg_progress,
+        }
+    }
+}
+
+/// Statistics for a single book
+#[derive(Debug, Clone, Serialize)]
+pub struct BookStats {
+    pub book_id: String,
+    pub title: String,
+    pub progress: f64,
+    pub reading_time_seconds: u64,
+    pub reading_time_formatted: String,
+    pub status: ReadingStatus,
+    pub last_read: Option<DateTime<Utc>>,
+    pub added_at: DateTime<Utc>,
+    pub bookmarks_count: usize,
+    pub annotations_count: usize,
+}
+
+/// Statistics for the entire library
+#[derive(Debug, Clone, Serialize)]
+pub struct LibraryStats {
+    pub total_books: usize,
+    pub books_finished: usize,
+    pub books_reading: usize,
+    pub books_unread: usize,
+    pub books_abandoned: usize,
+    pub total_reading_time_seconds: u64,
+    pub total_reading_time_formatted: String,
+    pub total_bookmarks: usize,
+    pub total_annotations: usize,
+    pub formats: HashMap<String, usize>,
+    pub recently_read_count: usize,
+    pub average_progress: f64,
+}
+
+/// Format seconds into a human-readable duration
+fn format_duration(seconds: u64) -> String {
+    let hours = seconds / 3600;
+    let minutes = (seconds % 3600) / 60;
+
+    if hours > 0 {
+        format!("{}h {}m", hours, minutes)
+    } else {
+        format!("{}m", minutes)
     }
 }
 
@@ -488,7 +627,7 @@ fn generate_id(title: &str) -> String {
         .join("-");
 
     let suffix = &uuid::Uuid::new_v4().to_string()[..8];
-    
+
     if base.is_empty() {
         suffix.to_string()
     } else {

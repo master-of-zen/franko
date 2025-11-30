@@ -46,7 +46,7 @@ pub fn render(frame: &mut Frame, state: &mut AppState, config: &Config) {
                 Constraint::Min(1),
             ])
             .split(main_chunks[0]);
-        
+
         // Render sidebar
         render_sidebar(frame, state, chunks[0], theme);
         chunks[1]
@@ -84,7 +84,7 @@ fn render_content(frame: &mut Frame, state: &mut AppState, area: Rect, config: &
     // Calculate margins
     let margin_left = config.tui.margin_left.min(area.width as usize / 4) as u16;
     let margin_right = config.tui.margin_right.min(area.width as usize / 4) as u16;
-    
+
     let content_area = Rect {
         x: area.x + margin_left,
         y: area.y + 1,
@@ -139,10 +139,7 @@ fn render_content(frame: &mut Frame, state: &mut AppState, area: Rect, config: &
             for &(start, end) in &rendered.highlights {
                 // Text before highlight
                 if start > last_end {
-                    spans.push(Span::styled(
-                        text[last_end..start].to_string(),
-                        style,
-                    ));
+                    spans.push(Span::styled(text[last_end..start].to_string(), style));
                 }
                 // Highlighted text
                 spans.push(Span::styled(
@@ -165,8 +162,7 @@ fn render_content(frame: &mut Frame, state: &mut AppState, area: Rect, config: &
         lines.push(Line::from(spans));
     }
 
-    let paragraph = Paragraph::new(lines)
-        .wrap(Wrap { trim: false });
+    let paragraph = Paragraph::new(lines).wrap(Wrap { trim: false });
 
     frame.render_widget(paragraph, content_area);
 }
@@ -197,7 +193,11 @@ fn build_lines_cache(state: &mut AppState, width: usize, config: &Config) {
                             heading_level: 0,
                             is_quote: false,
                             is_code: false,
-                            highlights: find_highlights_with_query(&line, search_active, &search_query),
+                            highlights: find_highlights_with_query(
+                                &line,
+                                search_active,
+                                &search_query,
+                            ),
                         });
                     }
                     // Empty line after paragraph
@@ -234,7 +234,11 @@ fn build_lines_cache(state: &mut AppState, width: usize, config: &Config) {
                             heading_level: *level,
                             is_quote: false,
                             is_code: false,
-                            highlights: find_highlights_with_query(&line, search_active, &search_query),
+                            highlights: find_highlights_with_query(
+                                &line,
+                                search_active,
+                                &search_query,
+                            ),
                         });
                     }
 
@@ -383,7 +387,11 @@ fn build_lines_cache(state: &mut AppState, width: usize, config: &Config) {
     state.total_lines = state.lines_cache.len();
 }
 
-fn find_highlights_with_query(text: &str, search_active: bool, search_query: &str) -> Vec<(usize, usize)> {
+fn find_highlights_with_query(
+    text: &str,
+    search_active: bool,
+    search_query: &str,
+) -> Vec<(usize, usize)> {
     if !search_active || search_query.is_empty() {
         return Vec::new();
     }
@@ -476,8 +484,8 @@ fn render_status_bar(frame: &mut Frame, state: &AppState, area: Rect, _theme: &T
     let padding = status_width.saturating_sub(left.len() + right.len());
     let status_text = format!("{}{}{}", left, " ".repeat(padding), right);
 
-    let paragraph = Paragraph::new(status_text)
-        .style(Style::default().fg(Color::White).bg(Color::DarkGray));
+    let paragraph =
+        Paragraph::new(status_text).style(Style::default().fg(Color::White).bg(Color::DarkGray));
     frame.render_widget(paragraph, area);
 }
 
@@ -491,9 +499,8 @@ fn render_command_line(frame: &mut Frame, state: &AppState, area: Rect) {
     };
 
     let text = format!(":{}", state.command_buffer);
-    let paragraph = Paragraph::new(text)
-        .style(Style::default().fg(Color::White).bg(Color::Black));
-    
+    let paragraph = Paragraph::new(text).style(Style::default().fg(Color::White).bg(Color::Black));
+
     frame.render_widget(Clear, command_area);
     frame.render_widget(paragraph, command_area);
 }
@@ -510,13 +517,16 @@ fn render_search_line(frame: &mut Frame, state: &AppState, area: Rect) {
     let results_info = if state.search.results.is_empty() {
         String::new()
     } else {
-        format!(" [{}/{}]", state.search.current_result + 1, state.search.results.len())
+        format!(
+            " [{}/{}]",
+            state.search.current_result + 1,
+            state.search.results.len()
+        )
     };
 
     let text = format!("/{}{}", state.search.query, results_info);
-    let paragraph = Paragraph::new(text)
-        .style(Style::default().fg(Color::White).bg(Color::Black));
-    
+    let paragraph = Paragraph::new(text).style(Style::default().fg(Color::White).bg(Color::Black));
+
     frame.render_widget(Clear, search_area);
     frame.render_widget(paragraph, search_area);
 }
@@ -531,9 +541,8 @@ fn render_goto_line(frame: &mut Frame, state: &AppState, area: Rect) {
     };
 
     let text = format!("Go to line: {}", state.command_buffer);
-    let paragraph = Paragraph::new(text)
-        .style(Style::default().fg(Color::White).bg(Color::Black));
-    
+    let paragraph = Paragraph::new(text).style(Style::default().fg(Color::White).bg(Color::Black));
+
     frame.render_widget(Clear, goto_area);
     frame.render_widget(paragraph, goto_area);
 }
@@ -544,7 +553,12 @@ fn render_help_overlay(frame: &mut Frame, _state: &AppState, area: Rect) {
     let x = (area.width - width) / 2;
     let y = (area.height - height) / 2;
 
-    let help_area = Rect { x, y, width, height };
+    let help_area = Rect {
+        x,
+        y,
+        width,
+        height,
+    };
 
     let help_text = vec![
         "",
@@ -592,7 +606,12 @@ fn render_toc_overlay(frame: &mut Frame, state: &AppState, area: Rect) {
     let x = (area.width - width) / 2;
     let y = (area.height - height) / 2;
 
-    let toc_area = Rect { x, y, width, height };
+    let toc_area = Rect {
+        x,
+        y,
+        width,
+        height,
+    };
 
     let items: Vec<ListItem> = state
         .book
@@ -625,11 +644,18 @@ fn render_toc_overlay(frame: &mut Frame, state: &AppState, area: Rect) {
 
 fn render_bookmark_overlay(frame: &mut Frame, state: &AppState, area: Rect) {
     let width = 50.min(area.width.saturating_sub(4));
-    let height = (state.bookmarks.len() as u16 + 4).max(6).min(area.height.saturating_sub(4));
+    let height = (state.bookmarks.len() as u16 + 4)
+        .max(6)
+        .min(area.height.saturating_sub(4));
     let x = (area.width - width) / 2;
     let y = (area.height - height) / 2;
 
-    let bookmark_area = Rect { x, y, width, height };
+    let bookmark_area = Rect {
+        x,
+        y,
+        width,
+        height,
+    };
 
     let items: Vec<ListItem> = if state.bookmarks.is_empty() {
         vec![ListItem::new(" No bookmarks yet. Press 'm' to add one.")]
@@ -672,8 +698,8 @@ fn render_message(frame: &mut Frame, msg: &str, msg_type: MessageType, area: Rec
         MessageType::Error => Color::Red,
     };
 
-    let paragraph = Paragraph::new(format!(" {} ", msg))
-        .style(Style::default().fg(Color::White).bg(color));
-    
+    let paragraph =
+        Paragraph::new(format!(" {} ", msg)).style(Style::default().fg(Color::White).bg(color));
+
     frame.render_widget(paragraph, msg_area);
 }

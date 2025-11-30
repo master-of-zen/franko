@@ -6,10 +6,17 @@ use std::path::Path;
 
 /// Parse an EPUB file
 pub fn parse(path: &Path) -> Result<Book> {
-    let doc = epub::doc::EpubDoc::new(path)
+    let mut doc = epub::doc::EpubDoc::new(path)
         .map_err(|e| anyhow::anyhow!("Failed to open EPUB: {:?}", e))?;
 
-    let metadata = extract_metadata(&doc)?;
+    let mut metadata = extract_metadata(&doc)?;
+
+    // Try to extract cover
+    if let Some((cover_data, cover_mime)) = extract_cover(&mut doc) {
+        metadata.cover = Some(cover_data);
+        metadata.cover_mime = Some(cover_mime);
+    }
+
     let content = extract_content(path)?;
 
     Ok(Book {
@@ -28,14 +35,116 @@ pub fn metadata(path: &Path) -> Result<BookMetadata> {
     extract_metadata(&doc)
 }
 
-fn get_metadata_string(doc: &epub::doc::EpubDoc<std::io::BufReader<std::fs::File>>, key: &str) -> Option<String> {
+/// Extract cover image from EPUB
+pub fn extract_cover_from_path(path: &Path) -> Result<Option<(Vec<u8>, String)>> {
+    let mut doc = epub::doc::EpubDoc::new(path)
+        .map_err(|e| anyhow::anyhow!("Failed to open EPUB: {:?}", e))?;
+
+    Ok(extract_cover(&mut doc))
+}
+
+fn get_metadata_string(
+    doc: &epub::doc::EpubDoc<std::io::BufReader<std::fs::File>>,
+    key: &str,
+) -> Option<String> {
     doc.mdata(key).map(|item| item.value.clone())
 }
 
-fn extract_metadata(doc: &epub::doc::EpubDoc<std::io::BufReader<std::fs::File>>) -> Result<BookMetadata> {
-    let title = get_metadata_string(doc, "title")
-        .unwrap_or_else(|| "Unknown Title".to_string());
-    
+fn extract_cover(
+    doc: &mut epub::doc::EpubDoc<std::io::BufReader<std::fs::File>>,
+) -> Option<(Vec<u8>, String)> {
+    // Method 1: Try the get_cover method directly - this returns (Vec<u8>, String) already
+    if let Some((cover_data, mime)) = doc.get_cover() {
+        return Some((cover_data, mime));
+    }
+
+    // Method 2: Look for cover in resources with common cover patterns
+    let cover_patterns = ["cover", "Cover", "COVER", "cover-image", "coverimage"];
+    let image_extensions = ["jpg", "jpeg", "png", "gif", "webp"];
+
+    // Clone resource IDs and mimes to avoid borrow issues
+    let resources: Vec<(String, String, String)> = doc
+        .resources
+        .iter()
+        .map(|(k, v)| {
+            (
+                k.clone(),
+                v.path.to_string_lossy().to_string(),
+                v.mime.clone(),
+            )
+        })
+        .collect();
+
+    for (id, path, mime) in &resources {
+        // Check if this is an image
+        if !mime.starts_with("image/") {
+            continue;
+        }
+
+        let id_lower = id.to_lowercase();
+        let path_lower = path.to_lowercase();
+
+        // Check if it matches cover patterns
+        let is_cover = cover_patterns.iter().any(|pattern| {
+            id_lower.contains(&pattern.to_lowercase())
+                || path_lower.contains(&pattern.to_lowercase())
+        });
+
+        if is_cover {
+            if let Some((data, _)) = doc.get_resource(id) {
+                return Some((data, mime.clone()));
+            }
+        }
+    }
+
+    // Method 3: Look for first image resource (often the cover)
+    for (id, _path, mime) in &resources {
+        if mime.starts_with("image/") {
+            // Check file extension
+            let id_lower = id.to_lowercase();
+            if image_extensions.iter().any(|ext| id_lower.ends_with(ext)) {
+                if let Some((data, _)) = doc.get_resource(id) {
+                    // Only return if it's reasonably sized (> 1KB, likely a cover not an icon)
+                    if data.len() > 1024 {
+                        return Some((data, mime.clone()));
+                    }
+                }
+            }
+        }
+    }
+
+    None
+}
+
+/// Detect image MIME type from magic bytes
+#[allow(dead_code)]
+fn detect_image_mime(data: &[u8]) -> String {
+    if data.len() < 4 {
+        return "image/jpeg".to_string();
+    }
+
+    // Check magic bytes
+    if data.starts_with(&[0x89, 0x50, 0x4E, 0x47]) {
+        "image/png".to_string()
+    } else if data.starts_with(&[0xFF, 0xD8, 0xFF]) {
+        "image/jpeg".to_string()
+    } else if data.starts_with(&[0x47, 0x49, 0x46]) {
+        "image/gif".to_string()
+    } else if data.starts_with(&[0x52, 0x49, 0x46, 0x46])
+        && data.len() > 12
+        && &data[8..12] == b"WEBP"
+    {
+        "image/webp".to_string()
+    } else {
+        "image/jpeg".to_string() // Default to JPEG
+    }
+}
+
+fn extract_metadata(
+    doc: &epub::doc::EpubDoc<std::io::BufReader<std::fs::File>>,
+) -> Result<BookMetadata> {
+    let title = get_metadata_string(doc, "title").unwrap_or_else(|| "Unknown Title".to_string());
+
     let authors = get_metadata_string(doc, "creator")
         .map(|a| vec![a])
         .unwrap_or_default();
@@ -77,27 +186,26 @@ fn extract_content(path: &Path) -> Result<BookContent> {
 
     // Get the spine (reading order)
     let spine = doc.spine.clone();
-    
+
     for spine_item in &spine {
         // spine_item is a SpineItem, we need to get its idref
         let chapter_id = &spine_item.idref;
-        
+
         // Try to get the content
         if let Some((content, _mime)) = doc.get_resource(chapter_id) {
             let html = String::from_utf8_lossy(&content).to_string();
             let blocks = parse_html_content(&html);
-            
+
             // Try to extract title from first heading
-            let title = blocks.iter()
-                .find_map(|b| match b {
-                    ContentBlock::Heading { text, level } if *level <= 2 => Some(text.clone()),
-                    _ => None,
-                });
+            let title = blocks.iter().find_map(|b| match b {
+                ContentBlock::Heading { text, level } if *level <= 2 => Some(text.clone()),
+                _ => None,
+            });
 
             let mut chapter = Chapter::new(chapter_id.clone(), order);
             chapter.title = title;
             chapter.blocks = blocks;
-            
+
             chapters.push(chapter);
             order += 1;
         }
@@ -111,21 +219,21 @@ fn extract_content(path: &Path) -> Result<BookContent> {
 
 fn parse_html_content(html: &str) -> Vec<ContentBlock> {
     let mut blocks = Vec::new();
-    
+
     // Try html2text first with a wider width for better text extraction
     let text = html2text::from_read(html.as_bytes(), 10000);
-    
+
     // If html2text gives us nothing useful, try manual extraction
     if text.trim().is_empty() || text.trim().len() < 20 {
         // Fallback: extract text between tags manually
         let mut cleaned = html.to_string();
-        
+
         // Remove script and style tags completely
         let script_re = regex::Regex::new(r"(?is)<script[^>]*>.*?</script>").unwrap();
         cleaned = script_re.replace_all(&cleaned, "").to_string();
         let style_re = regex::Regex::new(r"(?is)<style[^>]*>.*?</style>").unwrap();
         cleaned = style_re.replace_all(&cleaned, "").to_string();
-        
+
         // Extract paragraphs
         let p_re = regex::Regex::new(r"(?is)<p[^>]*>(.*?)</p>").unwrap();
         for cap in p_re.captures_iter(&cleaned) {
@@ -140,7 +248,7 @@ fn parse_html_content(html: &str) -> Vec<ContentBlock> {
                 }
             }
         }
-        
+
         // Extract headings
         let h_re = regex::Regex::new(r"(?is)<h([1-6])[^>]*>(.*?)</h[1-6]>").unwrap();
         for cap in h_re.captures_iter(&cleaned) {
@@ -156,7 +264,7 @@ fn parse_html_content(html: &str) -> Vec<ContentBlock> {
                 }
             }
         }
-        
+
         // If still no content, try to get any text from body
         if blocks.is_empty() {
             let body_re = regex::Regex::new(r"(?is)<body[^>]*>(.*?)</body>").unwrap();
@@ -179,10 +287,10 @@ fn parse_html_content(html: &str) -> Vec<ContentBlock> {
                 }
             }
         }
-        
+
         return blocks;
     }
-    
+
     // Process html2text output
     for para in text.split("\n\n") {
         let trimmed = para.trim();
@@ -193,7 +301,11 @@ fn parse_html_content(html: &str) -> Vec<ContentBlock> {
         // Detect headings (lines that are short and possibly styled)
         if trimmed.len() < 100 && !trimmed.contains('.') && trimmed.lines().count() == 1 {
             // Check if it looks like a heading (all caps, or short single line)
-            if trimmed.chars().all(|c| c.is_uppercase() || !c.is_alphabetic()) && trimmed.len() > 2 {
+            if trimmed
+                .chars()
+                .all(|c| c.is_uppercase() || !c.is_alphabetic())
+                && trimmed.len() > 2
+            {
                 blocks.push(ContentBlock::Heading {
                     level: 1,
                     text: trimmed.to_string(),
@@ -201,7 +313,7 @@ fn parse_html_content(html: &str) -> Vec<ContentBlock> {
                 continue;
             }
         }
-        
+
         if trimmed.starts_with('#') {
             let level = trimmed.chars().take_while(|&c| c == '#').count() as u8;
             blocks.push(ContentBlock::Heading {
@@ -210,7 +322,10 @@ fn parse_html_content(html: &str) -> Vec<ContentBlock> {
             });
         } else if trimmed.starts_with('>') || (trimmed.starts_with('"') && trimmed.len() > 50) {
             blocks.push(ContentBlock::Quote {
-                text: trimmed.trim_start_matches(&['>', '"'][..]).trim().to_string(),
+                text: trimmed
+                    .trim_start_matches(&['>', '"'][..])
+                    .trim()
+                    .to_string(),
                 attribution: None,
             });
         } else if trimmed == "---" || trimmed == "***" || trimmed == "* * *" {
@@ -230,7 +345,7 @@ fn parse_html_content(html: &str) -> Vec<ContentBlock> {
 fn strip_tags(html: &str) -> String {
     let tag_re = regex::Regex::new(r"<[^>]+>").unwrap();
     let result = tag_re.replace_all(html, "");
-    
+
     // Decode common HTML entities
     result
         .replace("&nbsp;", " ")
@@ -252,11 +367,9 @@ fn strip_tags(html: &str) -> String {
 
 fn build_toc(doc: &epub::doc::EpubDoc<std::io::BufReader<std::fs::File>>) -> Vec<TocEntry> {
     // EPUB crate doesn't expose TOC directly, so we'll build from spine
-    doc.spine.iter().enumerate().map(|(i, item)| {
-        TocEntry::new(
-            format!("Section {}", i + 1),
-            item.idref.clone(),
-            0,
-        )
-    }).collect()
+    doc.spine
+        .iter()
+        .enumerate()
+        .map(|(i, item)| TocEntry::new(format!("Section {}", i + 1), item.idref.clone(), 0))
+        .collect()
 }

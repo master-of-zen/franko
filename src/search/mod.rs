@@ -7,5 +7,7 @@ mod index;
 mod query;
 
 #[cfg(feature = "search")]
-pub use index::{SearchIndex, IndexEntry};
-pub use query::{SearchQuery, SearchResult, SearchResults, HighlightedMatch, highlight_matches, TextSearcher};
+pub use index::{IndexEntry, SearchIndex};
+pub use query::{
+    highlight_matches, HighlightedMatch, SearchQuery, SearchResult, SearchResults, TextSearcher,
+};
