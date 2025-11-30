@@ -418,7 +418,7 @@ pub fn reader(config: &Config, book: &Book, _chapter_index: usize) -> String {
                     </ul>
                 </nav>
             </aside>
-            
+
             <!-- Settings Panel -->
             <aside class="reader-settings-panel" id="settings-panel">
                 <div class="settings-panel-header">
@@ -428,44 +428,70 @@ pub fn reader(config: &Config, book: &Book, _chapter_index: usize) -> String {
                 <div class="settings-panel-content">
                     <!-- Font Size -->
                     <div class="setting-group">
-                        <label>Font Size</label>
+                        <div class="setting-label-row">
+                            <label>Font Size</label>
+                            <input type="number" id="font-size-input" class="setting-input" min="10" max="40" value="18">
+                            <span class="setting-unit">px</span>
+                        </div>
                         <div class="setting-control">
                             <button id="font-decrease" class="btn-icon">−</button>
-                            <span id="font-size-value">18px</span>
+                            <input type="range" id="font-size-range" min="10" max="40" value="18" class="setting-slider">
                             <button id="font-increase" class="btn-icon">+</button>
                         </div>
                     </div>
-                    
+
                     <!-- Line Height -->
                     <div class="setting-group">
-                        <label>Line Height</label>
+                        <div class="setting-label-row">
+                            <label>Line Height</label>
+                            <input type="number" id="line-height-input" class="setting-input" min="1" max="3" step="0.1" value="1.8">
+                        </div>
                         <div class="setting-control">
                             <button id="line-height-decrease" class="btn-icon">−</button>
-                            <span id="line-height-value">1.8</span>
+                            <input type="range" id="line-height-range" min="1" max="3" step="0.1" value="1.8" class="setting-slider">
                             <button id="line-height-increase" class="btn-icon">+</button>
                         </div>
                     </div>
-                    
+
                     <!-- Text Width -->
                     <div class="setting-group">
-                        <label>Text Width</label>
+                        <div class="setting-label-row">
+                            <label>Text Width</label>
+                            <input type="number" id="text-width-input" class="setting-input" min="400" max="1400" step="50" value="800">
+                            <span class="setting-unit">px</span>
+                        </div>
                         <div class="setting-buttons">
-                            <button class="setting-btn" data-width="narrow">Narrow</button>
-                            <button class="setting-btn active" data-width="medium">Medium</button>
-                            <button class="setting-btn" data-width="wide">Wide</button>
+                            <button class="setting-btn" data-width="narrow" data-width-value="600">Narrow</button>
+                            <button class="setting-btn active" data-width="medium" data-width-value="800">Medium</button>
+                            <button class="setting-btn" data-width="wide" data-width-value="1000">Wide</button>
+                            <button class="setting-btn" data-width="full" data-width-value="1400">Full</button>
                         </div>
                     </div>
-                    
+
+                    <!-- Paragraph Spacing -->
+                    <div class="setting-group">
+                        <div class="setting-label-row">
+                            <label>Paragraph Spacing</label>
+                            <input type="number" id="para-spacing-input" class="setting-input" min="0" max="4" step="0.25" value="1">
+                            <span class="setting-unit">em</span>
+                        </div>
+                        <div class="setting-control">
+                            <button id="para-spacing-decrease" class="btn-icon">−</button>
+                            <input type="range" id="para-spacing-range" min="0" max="4" step="0.25" value="1" class="setting-slider">
+                            <button id="para-spacing-increase" class="btn-icon">+</button>
+                        </div>
+                    </div>
+
                     <!-- Font Family -->
                     <div class="setting-group">
-                        <label>Font</label>
+                        <label>Font Family</label>
                         <select id="font-family-select">
                             <option value="serif">Serif (Georgia)</option>
                             <option value="sans">Sans-serif (System)</option>
                             <option value="mono">Monospace</option>
                         </select>
                     </div>
-                    
+
                     <!-- Theme -->
                     <div class="setting-group">
                         <label>Theme</label>
@@ -475,19 +501,9 @@ pub fn reader(config: &Config, book: &Book, _chapter_index: usize) -> String {
                             <button class="setting-btn theme-btn-sepia" data-theme="sepia">Sepia</button>
                         </div>
                     </div>
-                    
-                    <!-- Paragraph Spacing -->
-                    <div class="setting-group">
-                        <label>Paragraph Spacing</label>
-                        <div class="setting-control">
-                            <button id="para-spacing-decrease" class="btn-icon">−</button>
-                            <span id="para-spacing-value">1em</span>
-                            <button id="para-spacing-increase" class="btn-icon">+</button>
-                        </div>
-                    </div>
                 </div>
             </aside>
-            
+
             <main class="reader-main">
                 <header class="reader-header">
                     <a href="/library" class="btn-icon" data-tooltip="Back to Library" title="Back to Library">←</a>
@@ -521,7 +537,9 @@ pub fn reader(config: &Config, book: &Book, _chapter_index: usize) -> String {
         toc_items = toc_items,
         title = escape_html(&book.metadata.title),
         book_content = book_content,
-        book_id = book.source_path.file_stem()
+        book_id = book
+            .source_path
+            .file_stem()
             .and_then(|s| s.to_str())
             .unwrap_or("unknown"),
     );

@@ -39,7 +39,11 @@ pub async fn reader(
         Some(entry) => {
             // Use PDF viewer for PDF files
             if entry.format == "pdf" {
-                return Html(templates::pdf_reader(&state.config, &entry.id, &entry.metadata.title));
+                return Html(templates::pdf_reader(
+                    &state.config,
+                    &entry.id,
+                    &entry.metadata.title,
+                ));
             }
 
             match crate::formats::parse_book(&entry.path) {

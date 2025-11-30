@@ -42,7 +42,7 @@
     let readingSettings = {
         fontSize: 18,
         lineHeight: 1.8,
-        textWidth: 'medium',
+        textWidth: 800,
         fontFamily: 'serif',
         theme: 'dark',
         paraSpacing: 1
@@ -71,7 +71,7 @@
         const settingsPanel = document.getElementById('settings-panel');
         const toggleBtn = document.getElementById('toggle-settings');
         const closeBtn = document.getElementById('close-settings');
-        
+
         if (!settingsPanel) return;
 
         // Toggle settings panel
@@ -82,34 +82,68 @@
             closeBtn.addEventListener('click', toggleSettingsPanel);
         }
 
-        // Font size controls
+        // Font size controls - slider, input, and buttons
+        const fontSizeInput = document.getElementById('font-size-input');
+        const fontSizeRange = document.getElementById('font-size-range');
+
         document.getElementById('font-decrease')?.addEventListener('click', () => {
-            adjustSetting('fontSize', -1, 12, 32);
+            adjustSetting('fontSize', -1, 10, 40);
         });
         document.getElementById('font-increase')?.addEventListener('click', () => {
-            adjustSetting('fontSize', 1, 12, 32);
+            adjustSetting('fontSize', 1, 10, 40);
+        });
+        fontSizeRange?.addEventListener('input', (e) => {
+            setSettingValue('fontSize', parseInt(e.target.value), 10, 40);
+        });
+        fontSizeInput?.addEventListener('change', (e) => {
+            setSettingValue('fontSize', parseInt(e.target.value), 10, 40);
         });
 
-        // Line height controls
+        // Line height controls - slider, input, and buttons
+        const lineHeightInput = document.getElementById('line-height-input');
+        const lineHeightRange = document.getElementById('line-height-range');
+
         document.getElementById('line-height-decrease')?.addEventListener('click', () => {
-            adjustSetting('lineHeight', -0.1, 1.2, 2.5);
+            adjustSetting('lineHeight', -0.1, 1, 3);
         });
         document.getElementById('line-height-increase')?.addEventListener('click', () => {
-            adjustSetting('lineHeight', 0.1, 1.2, 2.5);
+            adjustSetting('lineHeight', 0.1, 1, 3);
+        });
+        lineHeightRange?.addEventListener('input', (e) => {
+            setSettingValue('lineHeight', parseFloat(e.target.value), 1, 3);
+        });
+        lineHeightInput?.addEventListener('change', (e) => {
+            setSettingValue('lineHeight', parseFloat(e.target.value), 1, 3);
         });
 
-        // Paragraph spacing controls
+        // Paragraph spacing controls - slider, input, and buttons
+        const paraSpacingInput = document.getElementById('para-spacing-input');
+        const paraSpacingRange = document.getElementById('para-spacing-range');
+
         document.getElementById('para-spacing-decrease')?.addEventListener('click', () => {
-            adjustSetting('paraSpacing', -0.25, 0, 3);
+            adjustSetting('paraSpacing', -0.25, 0, 4);
         });
         document.getElementById('para-spacing-increase')?.addEventListener('click', () => {
-            adjustSetting('paraSpacing', 0.25, 0, 3);
+            adjustSetting('paraSpacing', 0.25, 0, 4);
+        });
+        paraSpacingRange?.addEventListener('input', (e) => {
+            setSettingValue('paraSpacing', parseFloat(e.target.value), 0, 4);
+        });
+        paraSpacingInput?.addEventListener('change', (e) => {
+            setSettingValue('paraSpacing', parseFloat(e.target.value), 0, 4);
         });
 
-        // Text width buttons
+        // Text width - input and preset buttons
+        const textWidthInput = document.getElementById('text-width-input');
+        textWidthInput?.addEventListener('change', (e) => {
+            setCustomTextWidth(parseInt(e.target.value));
+        });
+
+        // Text width preset buttons
         document.querySelectorAll('[data-width]').forEach(btn => {
             btn.addEventListener('click', () => {
-                setTextWidth(btn.dataset.width);
+                const widthValue = parseInt(btn.dataset.widthValue);
+                setCustomTextWidth(widthValue);
                 document.querySelectorAll('[data-width]').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
             });
@@ -133,11 +167,45 @@
         loadReadingSettings();
     }
 
+    // Set a setting to a specific value (used by sliders and inputs)
+    function setSettingValue(setting, value, min, max) {
+        const position = getReadingPosition();
+
+        value = Math.max(min, Math.min(max, value));
+        readingSettings[setting] = value;
+        applySettings();
+        updateSettingsDisplay();
+        saveReadingSettings();
+
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                restoreReadingPosition(position);
+            });
+        });
+    }
+
+    // Set custom text width in pixels
+    function setCustomTextWidth(widthPx) {
+        const position = getReadingPosition();
+
+        widthPx = Math.max(400, Math.min(1400, widthPx));
+        readingSettings.textWidth = widthPx;
+        applySettings();
+        updateSettingsDisplay();
+        saveReadingSettings();
+
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                restoreReadingPosition(position);
+            });
+        });
+    }
+
     function toggleSettingsPanel() {
         const panel = document.getElementById('settings-panel');
         if (panel) {
             panel.classList.toggle('open');
-            
+
             // Handle overlay
             let overlay = document.querySelector('.settings-overlay');
             if (panel.classList.contains('open')) {
@@ -173,7 +241,7 @@
             const rect = el.getBoundingClientRect();
             const elementTop = rect.top + scrollTop;
             const distance = Math.abs(elementTop - viewportCenter);
-            
+
             if (distance < closestDistance) {
                 closestDistance = distance;
                 closestElement = { element: el, index: index, offsetRatio: (viewportCenter - elementTop) / rect.height };
@@ -192,21 +260,24 @@
 
         const paragraphs = contentEl.querySelectorAll('p, h1, h2, h3, h4, h5, h6');
         const targetEl = paragraphs[position.index];
-        
+
         if (targetEl) {
             const rect = targetEl.getBoundingClientRect();
             const elementTop = rect.top + window.scrollY;
             const viewportHeight = window.innerHeight;
             const targetScroll = elementTop - viewportHeight / 3 + (rect.height * position.offsetRatio);
-            
+
             window.scrollTo(0, Math.max(0, targetScroll));
         }
     }
 
     function adjustSetting(setting, delta, min, max) {
         const position = getReadingPosition();
-        
-        readingSettings[setting] = Math.max(min, Math.min(max, readingSettings[setting] + delta));
+
+        let newValue = readingSettings[setting] + delta;
+        // Round to avoid floating point issues
+        newValue = Math.round(newValue * 100) / 100;
+        readingSettings[setting] = Math.max(min, Math.min(max, newValue));
         applySettings();
         updateSettingsDisplay();
         saveReadingSettings();
@@ -219,23 +290,9 @@
         });
     }
 
-    function setTextWidth(width) {
-        const position = getReadingPosition();
-        
-        readingSettings.textWidth = width;
-        applySettings();
-        saveReadingSettings();
-
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                restoreReadingPosition(position);
-            });
-        });
-    }
-
     function setFontFamily(family) {
         const position = getReadingPosition();
-        
+
         readingSettings.fontFamily = family;
         applySettings();
         saveReadingSettings();
@@ -255,20 +312,22 @@
 
     function applySettings() {
         const root = document.documentElement;
-        
+
         // Font size
         root.style.setProperty('--font-size', readingSettings.fontSize + 'px');
-        
+
         // Line height
         root.style.setProperty('--line-height', readingSettings.lineHeight);
-        
+
         // Paragraph spacing
         root.style.setProperty('--para-spacing', readingSettings.paraSpacing + 'em');
-        
-        // Text width
-        const widths = { narrow: '600px', medium: '800px', wide: '1000px' };
-        root.style.setProperty('--text-width', widths[readingSettings.textWidth] || '800px');
-        
+
+        // Text width - now stores pixel value directly
+        const textWidth = typeof readingSettings.textWidth === 'number'
+            ? readingSettings.textWidth + 'px'
+            : readingSettings.textWidth;
+        root.style.setProperty('--text-width', textWidth);
+
         // Font family
         const fonts = {
             serif: 'Georgia, Cambria, "Times New Roman", Times, serif',
@@ -276,29 +335,48 @@
             mono: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace'
         };
         root.style.setProperty('--font-family-reading', fonts[readingSettings.fontFamily] || fonts.serif);
-        
+
         // Theme
         root.classList.remove('light', 'dark', 'sepia');
         root.classList.add(readingSettings.theme);
     }
 
     function updateSettingsDisplay() {
-        const fontSizeEl = document.getElementById('font-size-value');
-        const lineHeightEl = document.getElementById('line-height-value');
-        const paraSpacingEl = document.getElementById('para-spacing-value');
-        
-        if (fontSizeEl) fontSizeEl.textContent = readingSettings.fontSize + 'px';
-        if (lineHeightEl) lineHeightEl.textContent = readingSettings.lineHeight.toFixed(1);
-        if (paraSpacingEl) paraSpacingEl.textContent = readingSettings.paraSpacing + 'em';
-        
+        // Update inputs and sliders
+        const fontSizeInput = document.getElementById('font-size-input');
+        const fontSizeRange = document.getElementById('font-size-range');
+        if (fontSizeInput) fontSizeInput.value = readingSettings.fontSize;
+        if (fontSizeRange) fontSizeRange.value = readingSettings.fontSize;
+
+        const lineHeightInput = document.getElementById('line-height-input');
+        const lineHeightRange = document.getElementById('line-height-range');
+        if (lineHeightInput) lineHeightInput.value = readingSettings.lineHeight.toFixed(1);
+        if (lineHeightRange) lineHeightRange.value = readingSettings.lineHeight;
+
+        const paraSpacingInput = document.getElementById('para-spacing-input');
+        const paraSpacingRange = document.getElementById('para-spacing-range');
+        if (paraSpacingInput) paraSpacingInput.value = readingSettings.paraSpacing;
+        if (paraSpacingRange) paraSpacingRange.value = readingSettings.paraSpacing;
+
+        // Text width input
+        const textWidthInput = document.getElementById('text-width-input');
+        const textWidthValue = typeof readingSettings.textWidth === 'number'
+            ? readingSettings.textWidth
+            : parseInt(readingSettings.textWidth) || 800;
+        if (textWidthInput) textWidthInput.value = textWidthValue;
+
+        // Update text width preset buttons based on value
+        const presetWidths = { 600: 'narrow', 800: 'medium', 1000: 'wide', 1400: 'full' };
+        const matchingPreset = presetWidths[textWidthValue];
+        document.querySelectorAll('[data-width]').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.width === matchingPreset);
+        });
+
         // Update font family select
         const fontSelect = document.getElementById('font-family-select');
         if (fontSelect) fontSelect.value = readingSettings.fontFamily;
-        
-        // Update active buttons
-        document.querySelectorAll('[data-width]').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.width === readingSettings.textWidth);
-        });
+
+        // Update theme buttons
         document.querySelectorAll('[data-theme]').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.theme === readingSettings.theme);
         });
@@ -314,6 +392,12 @@
             try {
                 const parsed = JSON.parse(saved);
                 readingSettings = { ...readingSettings, ...parsed };
+
+                // Migrate old string textWidth to numeric
+                if (typeof readingSettings.textWidth === 'string') {
+                    const widthMap = { narrow: 600, medium: 800, wide: 1000, full: 1400 };
+                    readingSettings.textWidth = widthMap[readingSettings.textWidth] || 800;
+                }
             } catch (e) {
                 console.error('Failed to load reading settings', e);
             }
