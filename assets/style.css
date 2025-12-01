@@ -91,7 +91,7 @@
 }
 
 html {
-    font-size: var(--font-size, 16px);
+    font-size: 16px;
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -802,7 +802,12 @@ a:hover {
 
 .setting-input::-webkit-inner-spin-button,
 .setting-input::-webkit-outer-spin-button {
-    opacity: 1;
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.setting-input[type="number"] {
+    -moz-appearance: textfield;
 }
 
 .setting-unit {
@@ -1387,7 +1392,6 @@ a:hover {
 .reader-content p {
     margin-bottom: var(--para-spacing, 1em);
     color: var(--text-secondary);
-    font-size: 1rem;
     line-height: var(--line-height, 1.8);
 }
 
@@ -1561,7 +1565,54 @@ a:hover {
     box-shadow: var(--shadow-md);
 }
 
-/* Reading Progress */
+/* Reader Footer with Progress Stats */
+.reader-footer {
+    position: fixed;
+    bottom: 4px;
+    left: 0;
+    right: 0;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border);
+    padding: 0.5rem 1rem;
+    z-index: 299;
+    display: flex;
+    justify-content: center;
+}
+
+.progress-stats {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.progress-stat {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.progress-stat#progress-percent {
+    font-weight: 600;
+    color: var(--accent-primary);
+    font-size: 0.875rem;
+}
+
+.progress-stat#progress-chapter {
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* TOC word count */
+.toc-word-count {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+
+/* Reading Progress Bar */
 .reader-progress {
     position: fixed;
     bottom: 0;

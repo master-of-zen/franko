@@ -376,30 +376,52 @@ pub fn library(config: &Config, books: &[LibraryEntry]) -> String {
 }
 
 pub fn reader(config: &Config, book: &Book, _chapter_index: usize) -> String {
+    // Calculate word counts
+    let chapter_word_counts: Vec<usize> = book
+        .content
+        .chapters
+        .iter()
+        .map(|ch| ch.word_count())
+        .collect();
+    let total_word_count: usize = chapter_word_counts.iter().sum();
+
     // Build continuous content from all chapters with markers
     let mut book_content = String::new();
+    let mut cumulative_words = 0usize;
     for (i, chapter) in book.content.chapters.iter().enumerate() {
-        // Add chapter marker/anchor
+        let chapter_words = chapter_word_counts[i];
+        // Add chapter marker/anchor with word count data
         book_content.push_str(&format!(
-            r#"<section class="chapter" id="chapter-{}" data-chapter="{}">"#,
-            i, i
+            r#"<section class="chapter" id="chapter-{}" data-chapter="{}" data-words="{}" data-cumulative-words="{}">"#,
+            i, i, chapter_words, cumulative_words
         ));
         book_content.push_str(&chapter_to_html(chapter));
         book_content.push_str("</section>\n");
+        cumulative_words += chapter_words;
     }
 
-    // Build TOC with anchor links
+    // Build chapter word counts JSON for JavaScript
+    let chapter_words_json: String = chapter_word_counts
+        .iter()
+        .map(|w| w.to_string())
+        .collect::<Vec<_>>()
+        .join(",");
+
+    // Build TOC with anchor links and word counts
     let toc_items: String = book
         .content
         .chapters
         .iter()
         .enumerate()
         .map(|(i, ch)| {
+            let words = chapter_word_counts[i];
             format!(
-                "<li><a href=\"#chapter-{}\" data-chapter=\"{}\">{}</a></li>",
+                "<li><a href=\"#chapter-{}\" data-chapter=\"{}\" data-words=\"{}\">{} <span class=\"toc-word-count\">({} words)</span></a></li>",
                 i,
                 i,
+                words,
                 escape_html(&ch.display_title()),
+                format_word_count(words),
             )
         })
         .collect();
@@ -515,7 +537,8 @@ pub fn reader(config: &Config, book: &Book, _chapter_index: usize) -> String {
                         <button id="toggle-fullscreen" class="btn-icon" data-tooltip="Fullscreen">⛶</button>
                     </div>
                 </header>
-                <div class="reader-container" id="reader-container" data-layout="scroll" data-book-id="{book_id}">
+                <div class="reader-container" id="reader-container" data-layout="scroll" data-book-id="{book_id}" 
+                     data-total-words="{total_words}" data-chapter-words="[{chapter_words}]">
                     <article class="reader-content" id="content">
                         {book_content}
                     </article>
@@ -525,9 +548,14 @@ pub fn reader(config: &Config, book: &Book, _chapter_index: usize) -> String {
                     <span class="page-indicator" id="page-indicator">Page 1</span>
                     <button id="page-next" class="btn-icon page-nav">→</button>
                 </div>
-                <nav class="chapter-nav" id="chapter-nav">
-                    <span class="chapter-indicator" id="current-chapter-indicator"></span>
-                </nav>
+                <footer class="reader-footer" id="reader-footer">
+                    <div class="progress-stats">
+                        <span class="progress-stat" id="progress-percent">0%</span>
+                        <span class="progress-stat" id="progress-words-read">0 / {total_words_formatted} words</span>
+                        <span class="progress-stat" id="progress-chapter">Chapter 1</span>
+                        <span class="progress-stat" id="progress-chapter-words">0 / 0 words in chapter</span>
+                    </div>
+                </footer>
             </main>
         </div>
         <div class="reader-progress" id="progress">
@@ -542,6 +570,9 @@ pub fn reader(config: &Config, book: &Book, _chapter_index: usize) -> String {
             .file_stem()
             .and_then(|s| s.to_str())
             .unwrap_or("unknown"),
+        total_words = total_word_count,
+        total_words_formatted = format_word_count(total_word_count),
+        chapter_words = chapter_words_json,
     );
 
     base(&book.metadata.title, &content, config)
@@ -1447,4 +1478,12 @@ fn escape_html(s: &str) -> String {
         .replace('>', "&gt;")
         .replace('"', "&quot;")
         .replace('\'', "&#39;")
+}
+
+fn format_word_count(count: usize) -> String {
+    if count >= 1000 {
+        format!("{:.1}k", count as f64 / 1000.0)
+    } else {
+        count.to_string()
+    }
 }

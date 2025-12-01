@@ -406,42 +406,138 @@
         updateSettingsDisplay();
     }
 
+    // Word count and progress tracking
+    let totalBookWords = 0;
+    let chapterWordCounts = [];
+
+    function initWordCounts() {
+        const container = document.getElementById('reader-container');
+        if (!container) return;
+
+        totalBookWords = parseInt(container.dataset.totalWords) || 0;
+        try {
+            chapterWordCounts = JSON.parse(container.dataset.chapterWords || '[]');
+        } catch (e) {
+            chapterWordCounts = [];
+        }
+    }
+
     // Chapter tracking based on scroll position
     function initChapterTracking() {
+        initWordCounts();
+        
         const chapters = document.querySelectorAll('.chapter');
         if (chapters.length === 0) return;
 
-        const updateCurrentChapter = throttle(() => {
-            const scrollTop = window.scrollY + 100; // Offset for header
+        const updateProgress = throttle(() => {
+            const scrollTop = window.scrollY;
+            const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const scrollPercent = scrollHeight > 0 ? scrollTop / scrollHeight : 0;
+
+            // Update current chapter
             let newChapter = 0;
+            let chapterScrollPercent = 0;
 
             chapters.forEach((chapter, index) => {
-                if (chapter.offsetTop <= scrollTop) {
+                if (chapter.offsetTop <= scrollTop + 100) {
                     newChapter = index;
                 }
             });
 
+            // Calculate chapter-specific progress
+            const currentChapterEl = chapters[newChapter];
+            const nextChapterEl = chapters[newChapter + 1];
+            
+            if (currentChapterEl) {
+                const chapterTop = currentChapterEl.offsetTop;
+                const chapterBottom = nextChapterEl 
+                    ? nextChapterEl.offsetTop 
+                    : document.documentElement.scrollHeight;
+                const chapterHeight = chapterBottom - chapterTop;
+                const scrollInChapter = scrollTop - chapterTop + 100;
+                chapterScrollPercent = Math.max(0, Math.min(1, scrollInChapter / chapterHeight));
+            }
+
+            // Calculate words read
+            let wordsReadInPreviousChapters = 0;
+            for (let i = 0; i < newChapter; i++) {
+                wordsReadInPreviousChapters += chapterWordCounts[i] || 0;
+            }
+            
+            const currentChapterWords = chapterWordCounts[newChapter] || 0;
+            const wordsReadInCurrentChapter = Math.round(currentChapterWords * chapterScrollPercent);
+            const totalWordsRead = wordsReadInPreviousChapters + wordsReadInCurrentChapter;
+
+            // Update progress display
+            updateProgressDisplay({
+                percent: scrollPercent * 100,
+                wordsRead: totalWordsRead,
+                totalWords: totalBookWords,
+                chapter: newChapter,
+                chapterCount: chapters.length,
+                chapterWordsRead: wordsReadInCurrentChapter,
+                chapterTotalWords: currentChapterWords
+            });
+
             if (newChapter !== currentChapter) {
                 currentChapter = newChapter;
-                updateChapterIndicator();
                 updateTocHighlight();
             }
         }, 100);
 
-        window.addEventListener('scroll', updateCurrentChapter);
-        updateCurrentChapter(); // Initial call
+        window.addEventListener('scroll', updateProgress);
+        updateProgress(); // Initial call
     }
 
-    // Update chapter indicator in footer
-    function updateChapterIndicator() {
-        const indicator = document.getElementById('current-chapter-indicator');
-        const chapters = document.querySelectorAll('.chapter');
-        if (indicator && chapters.length > 0) {
-            const chapter = chapters[currentChapter];
-            const title = chapter.querySelector('.chapter-title');
-            const titleText = title ? title.textContent : `Chapter ${currentChapter + 1}`;
-            indicator.textContent = `${titleText} (${currentChapter + 1}/${chapters.length})`;
+    // Update all progress indicators
+    function updateProgressDisplay(stats) {
+        // Update progress bar
+        if (progressFill) {
+            progressFill.style.width = stats.percent + '%';
         }
+
+        // Update percentage
+        const percentEl = document.getElementById('progress-percent');
+        if (percentEl) {
+            percentEl.textContent = Math.round(stats.percent) + '%';
+        }
+
+        // Update words read
+        const wordsReadEl = document.getElementById('progress-words-read');
+        if (wordsReadEl) {
+            wordsReadEl.textContent = `${formatWordCount(stats.wordsRead)} / ${formatWordCount(stats.totalWords)} words`;
+        }
+
+        // Update chapter indicator
+        const chapterEl = document.getElementById('progress-chapter');
+        if (chapterEl) {
+            const chapters = document.querySelectorAll('.chapter');
+            const chapter = chapters[stats.chapter];
+            const title = chapter?.querySelector('.chapter-title');
+            const titleText = title ? title.textContent : `Chapter ${stats.chapter + 1}`;
+            chapterEl.textContent = `${titleText} (${stats.chapter + 1}/${stats.chapterCount})`;
+        }
+
+        // Update chapter words
+        const chapterWordsEl = document.getElementById('progress-chapter-words');
+        if (chapterWordsEl) {
+            chapterWordsEl.textContent = `${formatWordCount(stats.chapterWordsRead)} / ${formatWordCount(stats.chapterTotalWords)} in chapter`;
+        }
+    }
+
+    // Format word count for display
+    function formatWordCount(count) {
+        if (count >= 1000000) {
+            return (count / 1000000).toFixed(1) + 'M';
+        } else if (count >= 1000) {
+            return (count / 1000).toFixed(1) + 'k';
+        }
+        return count.toString();
+    }
+
+    // Update chapter indicator in footer (legacy, now handled by updateProgressDisplay)
+    function updateChapterIndicator() {
+        // Handled by updateProgressDisplay
     }
 
     // Update TOC highlight
