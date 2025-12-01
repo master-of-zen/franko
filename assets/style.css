@@ -826,6 +826,23 @@ a:hover {
     padding: 0.25rem;
 }
 
+.setting-control-inline {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.setting-control-inline .btn-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.setting-control-inline .setting-input {
+    width: 70px;
+}
+
 .setting-control .btn-icon {
     width: 36px;
     height: 36px;

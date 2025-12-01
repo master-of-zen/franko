@@ -84,6 +84,22 @@ predicates = "3.0"
 name = "franko"
 path = "src/main.rs"
 
+# Fast debug builds
+[profile.dev]
+opt-level = 0
+debug = true
+
+# Optimize dependencies even in dev mode (huge speed boost for runtime)
+[profile.dev.package."*"]
+opt-level = 2
+
+# Quick release for testing (much faster than full release)
+[profile.release-fast]
+inherits = "release"
+lto = "thin"
+codegen-units = 16
+
+# Full release for distribution (slow but max optimization)
 [profile.release]
 lto = true
 codegen-units = 1

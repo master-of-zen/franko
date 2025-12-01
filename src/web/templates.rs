@@ -452,13 +452,12 @@ pub fn reader(config: &Config, book: &Book, _chapter_index: usize) -> String {
                     <div class="setting-group">
                         <div class="setting-label-row">
                             <label>Font Size</label>
-                            <input type="number" id="font-size-input" class="setting-input" min="10" max="40" value="18">
-                            <span class="setting-unit">px</span>
-                        </div>
-                        <div class="setting-control">
-                            <button id="font-decrease" class="btn-icon">−</button>
-                            <input type="range" id="font-size-range" min="10" max="40" value="18" class="setting-slider">
-                            <button id="font-increase" class="btn-icon">+</button>
+                            <div class="setting-control-inline">
+                                <button id="font-decrease" class="btn-icon">−</button>
+                                <input type="number" id="font-size-input" class="setting-input" value="18">
+                                <span class="setting-unit">px</span>
+                                <button id="font-increase" class="btn-icon">+</button>
+                            </div>
                         </div>
                     </div>
 
@@ -466,12 +465,11 @@ pub fn reader(config: &Config, book: &Book, _chapter_index: usize) -> String {
                     <div class="setting-group">
                         <div class="setting-label-row">
                             <label>Line Height</label>
-                            <input type="number" id="line-height-input" class="setting-input" min="1" max="3" step="0.1" value="1.8">
-                        </div>
-                        <div class="setting-control">
-                            <button id="line-height-decrease" class="btn-icon">−</button>
-                            <input type="range" id="line-height-range" min="1" max="3" step="0.1" value="1.8" class="setting-slider">
-                            <button id="line-height-increase" class="btn-icon">+</button>
+                            <div class="setting-control-inline">
+                                <button id="line-height-decrease" class="btn-icon">−</button>
+                                <input type="number" id="line-height-input" class="setting-input" step="0.1" value="1.8">
+                                <button id="line-height-increase" class="btn-icon">+</button>
+                            </div>
                         </div>
                     </div>
 
@@ -494,13 +492,12 @@ pub fn reader(config: &Config, book: &Book, _chapter_index: usize) -> String {
                     <div class="setting-group">
                         <div class="setting-label-row">
                             <label>Paragraph Spacing</label>
-                            <input type="number" id="para-spacing-input" class="setting-input" min="0" max="4" step="0.25" value="1">
-                            <span class="setting-unit">em</span>
-                        </div>
-                        <div class="setting-control">
-                            <button id="para-spacing-decrease" class="btn-icon">−</button>
-                            <input type="range" id="para-spacing-range" min="0" max="4" step="0.25" value="1" class="setting-slider">
-                            <button id="para-spacing-increase" class="btn-icon">+</button>
+                            <div class="setting-control-inline">
+                                <button id="para-spacing-decrease" class="btn-icon">−</button>
+                                <input type="number" id="para-spacing-input" class="setting-input" step="0.25" value="1">
+                                <span class="setting-unit">em</span>
+                                <button id="para-spacing-increase" class="btn-icon">+</button>
+                            </div>
                         </div>
                     </div>
 

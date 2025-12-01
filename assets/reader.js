@@ -82,55 +82,43 @@
             closeBtn.addEventListener('click', toggleSettingsPanel);
         }
 
-        // Font size controls - slider, input, and buttons
+        // Font size controls - input and buttons
         const fontSizeInput = document.getElementById('font-size-input');
-        const fontSizeRange = document.getElementById('font-size-range');
 
         document.getElementById('font-decrease')?.addEventListener('click', () => {
-            adjustSetting('fontSize', -1, 10, 40);
+            adjustSetting('fontSize', -1);
         });
         document.getElementById('font-increase')?.addEventListener('click', () => {
-            adjustSetting('fontSize', 1, 10, 40);
-        });
-        fontSizeRange?.addEventListener('input', (e) => {
-            setSettingValue('fontSize', parseInt(e.target.value), 10, 40);
+            adjustSetting('fontSize', 1);
         });
         fontSizeInput?.addEventListener('change', (e) => {
-            setSettingValue('fontSize', parseInt(e.target.value), 10, 40);
+            setSettingValue('fontSize', parseInt(e.target.value));
         });
 
-        // Line height controls - slider, input, and buttons
+        // Line height controls - input and buttons
         const lineHeightInput = document.getElementById('line-height-input');
-        const lineHeightRange = document.getElementById('line-height-range');
 
         document.getElementById('line-height-decrease')?.addEventListener('click', () => {
-            adjustSetting('lineHeight', -0.1, 1, 3);
+            adjustSetting('lineHeight', -0.1);
         });
         document.getElementById('line-height-increase')?.addEventListener('click', () => {
-            adjustSetting('lineHeight', 0.1, 1, 3);
-        });
-        lineHeightRange?.addEventListener('input', (e) => {
-            setSettingValue('lineHeight', parseFloat(e.target.value), 1, 3);
+            adjustSetting('lineHeight', 0.1);
         });
         lineHeightInput?.addEventListener('change', (e) => {
-            setSettingValue('lineHeight', parseFloat(e.target.value), 1, 3);
+            setSettingValue('lineHeight', parseFloat(e.target.value));
         });
 
-        // Paragraph spacing controls - slider, input, and buttons
+        // Paragraph spacing controls - input and buttons
         const paraSpacingInput = document.getElementById('para-spacing-input');
-        const paraSpacingRange = document.getElementById('para-spacing-range');
 
         document.getElementById('para-spacing-decrease')?.addEventListener('click', () => {
-            adjustSetting('paraSpacing', -0.25, 0, 4);
+            adjustSetting('paraSpacing', -0.25);
         });
         document.getElementById('para-spacing-increase')?.addEventListener('click', () => {
-            adjustSetting('paraSpacing', 0.25, 0, 4);
-        });
-        paraSpacingRange?.addEventListener('input', (e) => {
-            setSettingValue('paraSpacing', parseFloat(e.target.value), 0, 4);
+            adjustSetting('paraSpacing', 0.25);
         });
         paraSpacingInput?.addEventListener('change', (e) => {
-            setSettingValue('paraSpacing', parseFloat(e.target.value), 0, 4);
+            setSettingValue('paraSpacing', parseFloat(e.target.value));
         });
 
         // Text width - input and preset buttons
@@ -167,11 +155,15 @@
         loadReadingSettings();
     }
 
-    // Set a setting to a specific value (used by sliders and inputs)
-    function setSettingValue(setting, value, min, max) {
+    // Set a setting to a specific value (used by inputs)
+    function setSettingValue(setting, value) {
         const position = getReadingPosition();
 
-        value = Math.max(min, Math.min(max, value));
+        // Ensure positive values for font size and line height
+        if (setting === 'fontSize' && value < 1) value = 1;
+        if (setting === 'lineHeight' && value < 0.1) value = 0.1;
+        if (setting === 'paraSpacing' && value < 0) value = 0;
+        
         readingSettings[setting] = value;
         applySettings();
         updateSettingsDisplay();
@@ -304,13 +296,19 @@
         }
     }
 
-    function adjustSetting(setting, delta, min, max) {
+    function adjustSetting(setting, delta) {
         const position = getReadingPosition();
 
         let newValue = readingSettings[setting] + delta;
         // Round to avoid floating point issues
         newValue = Math.round(newValue * 100) / 100;
-        readingSettings[setting] = Math.max(min, Math.min(max, newValue));
+        
+        // Ensure minimum values
+        if (setting === 'fontSize' && newValue < 1) newValue = 1;
+        if (setting === 'lineHeight' && newValue < 0.1) newValue = 0.1;
+        if (setting === 'paraSpacing' && newValue < 0) newValue = 0;
+        
+        readingSettings[setting] = newValue;
         applySettings();
         updateSettingsDisplay();
         saveReadingSettings();
@@ -375,21 +373,15 @@
     }
 
     function updateSettingsDisplay() {
-        // Update inputs and sliders
+        // Update inputs
         const fontSizeInput = document.getElementById('font-size-input');
-        const fontSizeRange = document.getElementById('font-size-range');
         if (fontSizeInput) fontSizeInput.value = readingSettings.fontSize;
-        if (fontSizeRange) fontSizeRange.value = readingSettings.fontSize;
 
         const lineHeightInput = document.getElementById('line-height-input');
-        const lineHeightRange = document.getElementById('line-height-range');
         if (lineHeightInput) lineHeightInput.value = readingSettings.lineHeight.toFixed(1);
-        if (lineHeightRange) lineHeightRange.value = readingSettings.lineHeight;
 
         const paraSpacingInput = document.getElementById('para-spacing-input');
-        const paraSpacingRange = document.getElementById('para-spacing-range');
         if (paraSpacingInput) paraSpacingInput.value = readingSettings.paraSpacing;
-        if (paraSpacingRange) paraSpacingRange.value = readingSettings.paraSpacing;
 
         // Text width input
         const textWidthInput = document.getElementById('text-width-input');
