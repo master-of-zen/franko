@@ -537,7 +537,7 @@ pub fn reader(config: &Config, book: &Book, _chapter_index: usize) -> String {
                         <button id="toggle-fullscreen" class="btn-icon" data-tooltip="Fullscreen">⛶</button>
                     </div>
                 </header>
-                <div class="reader-container" id="reader-container" data-layout="scroll" data-book-id="{book_id}" 
+                <div class="reader-container" id="reader-container" data-layout="scroll" data-book-id="{book_id}"
                      data-total-words="{total_words}" data-chapter-words="[{chapter_words}]">
                     <article class="reader-content" id="content">
                         {book_content}

@@ -425,7 +425,7 @@
     // Chapter tracking based on scroll position
     function initChapterTracking() {
         initWordCounts();
-        
+
         const chapters = document.querySelectorAll('.chapter');
         if (chapters.length === 0) return;
 
@@ -447,11 +447,11 @@
             // Calculate chapter-specific progress
             const currentChapterEl = chapters[newChapter];
             const nextChapterEl = chapters[newChapter + 1];
-            
+
             if (currentChapterEl) {
                 const chapterTop = currentChapterEl.offsetTop;
-                const chapterBottom = nextChapterEl 
-                    ? nextChapterEl.offsetTop 
+                const chapterBottom = nextChapterEl
+                    ? nextChapterEl.offsetTop
                     : document.documentElement.scrollHeight;
                 const chapterHeight = chapterBottom - chapterTop;
                 const scrollInChapter = scrollTop - chapterTop + 100;
@@ -463,7 +463,7 @@
             for (let i = 0; i < newChapter; i++) {
                 wordsReadInPreviousChapters += chapterWordCounts[i] || 0;
             }
-            
+
             const currentChapterWords = chapterWordCounts[newChapter] || 0;
             const wordsReadInCurrentChapter = Math.round(currentChapterWords * chapterScrollPercent);
             const totalWordsRead = wordsReadInPreviousChapters + wordsReadInCurrentChapter;
