@@ -700,11 +700,13 @@ a:hover {
     top: 0;
     right: -350px;
     width: 320px;
+    min-width: 250px;
+    max-width: 600px;
     height: 100vh;
     background: var(--bg-secondary);
     border-left: 1px solid var(--border);
     z-index: 200;
-    transition: right 0.3s ease;
+    transition: right 0.3s ease, width 0s;
     display: flex;
     flex-direction: column;
     box-shadow: -4px 0 20px rgba(0, 0, 0, 0.2);
@@ -712,6 +714,28 @@ a:hover {
 
 .reader-settings-panel.open {
     right: 0;
+}
+
+.reader-settings-panel.resizing {
+    transition: none;
+    user-select: none;
+}
+
+.settings-panel-resize-handle {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 6px;
+    height: 100%;
+    cursor: ew-resize;
+    background: transparent;
+    z-index: 10;
+}
+
+.settings-panel-resize-handle:hover,
+.settings-panel-resize-handle.active {
+    background: var(--accent-primary);
+    opacity: 0.5;
 }
 
 .settings-panel-header {
@@ -774,12 +798,14 @@ a:hover {
 .setting-label-row {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 0.5rem;
     margin-bottom: 0.5rem;
+    flex-wrap: wrap;
 }
 
 .setting-label-row label {
-    flex: 1;
+    flex-shrink: 0;
     margin-bottom: 0;
 }
 
@@ -829,18 +855,46 @@ a:hover {
 .setting-control-inline {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.25rem;
+    flex-shrink: 0;
 }
 
 .setting-control-inline .btn-icon {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     font-size: 1rem;
     flex-shrink: 0;
 }
 
 .setting-control-inline .setting-input {
-    width: 70px;
+    width: 55px;
+}
+
+.setting-control-inline .setting-unit {
+    min-width: auto;
+}
+
+.setting-row-pair {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.setting-pair {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex: 1;
+}
+
+.setting-pair-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    min-width: 28px;
+}
+
+.setting-pair .setting-input {
+    width: 60px;
 }
 
 .setting-control .btn-icon {

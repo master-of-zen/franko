@@ -45,7 +45,9 @@
         textWidth: 800,
         fontFamily: 'serif',
         theme: 'dark',
-        paraSpacing: 1
+        paraSpacing: 1,
+        panelMinWidth: 250,
+        panelMaxWidth: 600
     };
 
     // Initialize
@@ -71,6 +73,7 @@
         const settingsPanel = document.getElementById('settings-panel');
         const toggleBtn = document.getElementById('toggle-settings');
         const closeBtn = document.getElementById('close-settings');
+        const resizeHandle = document.getElementById('settings-resize-handle');
 
         if (!settingsPanel) return;
 
@@ -80,6 +83,47 @@
         }
         if (closeBtn) {
             closeBtn.addEventListener('click', toggleSettingsPanel);
+        }
+
+        // Panel resize functionality
+        if (resizeHandle) {
+            let isResizing = false;
+            let startX = 0;
+            let startWidth = 0;
+
+            resizeHandle.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                startX = e.clientX;
+                startWidth = settingsPanel.offsetWidth;
+                settingsPanel.classList.add('resizing');
+                resizeHandle.classList.add('active');
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isResizing) return;
+                const deltaX = startX - e.clientX;
+                const minW = readingSettings.panelMinWidth || 250;
+                const maxW = readingSettings.panelMaxWidth || 600;
+                const newWidth = Math.min(maxW, Math.max(minW, startWidth + deltaX));
+                settingsPanel.style.width = newWidth + 'px';
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isResizing) {
+                    isResizing = false;
+                    settingsPanel.classList.remove('resizing');
+                    resizeHandle.classList.remove('active');
+                    // Save width preference
+                    localStorage.setItem('franko-settings-panel-width', settingsPanel.style.width);
+                }
+            });
+
+            // Restore saved width
+            const savedWidth = localStorage.getItem('franko-settings-panel-width');
+            if (savedWidth) {
+                settingsPanel.style.width = savedWidth;
+            }
         }
 
         // Font size controls - input and buttons
@@ -151,8 +195,50 @@
             });
         });
 
+        // Panel width limit controls
+        const panelMinWidthInput = document.getElementById('panel-min-width-input');
+        const panelMaxWidthInput = document.getElementById('panel-max-width-input');
+
+        panelMinWidthInput?.addEventListener('change', (e) => {
+            let value = parseInt(e.target.value) || 200;
+            value = Math.max(200, Math.min(value, readingSettings.panelMaxWidth - 50));
+            readingSettings.panelMinWidth = value;
+            applyPanelWidthLimits();
+            updateSettingsDisplay();
+            saveReadingSettings();
+        });
+
+        panelMaxWidthInput?.addEventListener('change', (e) => {
+            let value = parseInt(e.target.value) || 800;
+            value = Math.max(readingSettings.panelMinWidth + 50, Math.min(value, 1200));
+            readingSettings.panelMaxWidth = value;
+            applyPanelWidthLimits();
+            updateSettingsDisplay();
+            saveReadingSettings();
+        });
+
         // Load saved settings
         loadReadingSettings();
+    }
+
+    // Apply panel width limits to CSS and current width
+    function applyPanelWidthLimits() {
+        const panel = document.getElementById('settings-panel');
+        if (!panel) return;
+
+        const minW = readingSettings.panelMinWidth || 250;
+        const maxW = readingSettings.panelMaxWidth || 600;
+
+        panel.style.minWidth = minW + 'px';
+        panel.style.maxWidth = maxW + 'px';
+
+        // Clamp current width if needed
+        const currentWidth = panel.offsetWidth;
+        if (currentWidth < minW) {
+            panel.style.width = minW + 'px';
+        } else if (currentWidth > maxW) {
+            panel.style.width = maxW + 'px';
+        }
     }
 
     // Set a setting to a specific value (used by inputs)
@@ -163,7 +249,7 @@
         if (setting === 'fontSize' && value < 1) value = 1;
         if (setting === 'lineHeight' && value < 0.1) value = 0.1;
         if (setting === 'paraSpacing' && value < 0) value = 0;
-        
+
         readingSettings[setting] = value;
         applySettings();
         updateSettingsDisplay();
@@ -302,12 +388,12 @@
         let newValue = readingSettings[setting] + delta;
         // Round to avoid floating point issues
         newValue = Math.round(newValue * 100) / 100;
-        
+
         // Ensure minimum values
         if (setting === 'fontSize' && newValue < 1) newValue = 1;
         if (setting === 'lineHeight' && newValue < 0.1) newValue = 0.1;
         if (setting === 'paraSpacing' && newValue < 0) newValue = 0;
-        
+
         readingSettings[setting] = newValue;
         applySettings();
         updateSettingsDisplay();
@@ -405,6 +491,12 @@
         document.querySelectorAll('[data-theme]').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.theme === readingSettings.theme);
         });
+
+        // Update panel width limit inputs
+        const panelMinWidthInput = document.getElementById('panel-min-width-input');
+        const panelMaxWidthInput = document.getElementById('panel-max-width-input');
+        if (panelMinWidthInput) panelMinWidthInput.value = readingSettings.panelMinWidth || 250;
+        if (panelMaxWidthInput) panelMaxWidthInput.value = readingSettings.panelMaxWidth || 600;
     }
 
     function saveReadingSettings() {
@@ -428,6 +520,7 @@
             }
         }
         applySettings();
+        applyPanelWidthLimits();
         updateSettingsDisplay();
     }
 

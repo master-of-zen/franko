@@ -443,6 +443,7 @@ pub fn reader(config: &Config, book: &Book, _chapter_index: usize) -> String {
 
             <!-- Settings Panel -->
             <aside class="reader-settings-panel" id="settings-panel">
+                <div class="settings-panel-resize-handle" id="settings-resize-handle"></div>
                 <div class="settings-panel-header">
                     <h3>Reading Settings</h3>
                     <button id="close-settings" class="btn-icon">×</button>
@@ -518,6 +519,23 @@ pub fn reader(config: &Config, book: &Book, _chapter_index: usize) -> String {
                             <button class="setting-btn theme-btn-light" data-theme="light">Light</button>
                             <button class="setting-btn theme-btn-dark active" data-theme="dark">Dark</button>
                             <button class="setting-btn theme-btn-sepia" data-theme="sepia">Sepia</button>
+                        </div>
+                    </div>
+
+                    <!-- Panel Width Limits -->
+                    <div class="setting-group">
+                        <label>Panel Size Limits</label>
+                        <div class="setting-row-pair">
+                            <div class="setting-pair">
+                                <span class="setting-pair-label">Min</span>
+                                <input type="number" id="panel-min-width-input" class="setting-input" step="50" value="250">
+                                <span class="setting-unit">px</span>
+                            </div>
+                            <div class="setting-pair">
+                                <span class="setting-pair-label">Max</span>
+                                <input type="number" id="panel-max-width-input" class="setting-input" step="50" value="600">
+                                <span class="setting-unit">px</span>
+                            </div>
                         </div>
                     </div>
                 </div>
