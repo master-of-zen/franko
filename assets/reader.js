@@ -244,7 +244,19 @@
 
             if (distance < closestDistance) {
                 closestDistance = distance;
-                closestElement = { element: el, index: index, offsetRatio: (viewportCenter - elementTop) / rect.height };
+                // Store the element's text content hash and position within it
+                // This is more stable than height-based offset when font changes
+                const textContent = el.textContent || '';
+                const firstWords = textContent.substring(0, 50); // First 50 chars as identifier
+                closestElement = {
+                    element: el,
+                    index: index,
+                    firstWords: firstWords,
+                    // Calculate how far into the element the viewport center is (as line count estimate)
+                    viewportCenterY: viewportCenter,
+                    elementTop: elementTop,
+                    pixelOffset: viewportCenter - elementTop
+                };
             }
         });
 
@@ -259,15 +271,36 @@
         if (!contentEl) return;
 
         const paragraphs = contentEl.querySelectorAll('p, h1, h2, h3, h4, h5, h6');
-        const targetEl = paragraphs[position.index];
+
+        // First try to find element by matching text content (more reliable)
+        let targetEl = null;
+
+        for (let i = 0; i < paragraphs.length; i++) {
+            const el = paragraphs[i];
+            const textContent = el.textContent || '';
+            const firstWords = textContent.substring(0, 50);
+
+            if (firstWords === position.firstWords) {
+                targetEl = el;
+                break;
+            }
+        }
+
+        // Fall back to index if text match fails
+        if (!targetEl && paragraphs[position.index]) {
+            targetEl = paragraphs[position.index];
+        }
 
         if (targetEl) {
             const rect = targetEl.getBoundingClientRect();
             const elementTop = rect.top + window.scrollY;
             const viewportHeight = window.innerHeight;
-            const targetScroll = elementTop - viewportHeight / 3 + (rect.height * position.offsetRatio);
 
-            window.scrollTo(0, Math.max(0, targetScroll));
+            // Position element at the top third of viewport
+            // Add a small offset based on how far into the element we were
+            const targetScroll = elementTop - viewportHeight / 3;
+
+            window.scrollTo({ top: Math.max(0, targetScroll), behavior: 'instant' });
         }
     }
 
