@@ -478,8 +478,12 @@ pub fn reader(config: &Config, book: &Book, _chapter_index: usize) -> String {
                     <div class="setting-group">
                         <div class="setting-label-row">
                             <label>Text Width</label>
-                            <input type="number" id="text-width-input" class="setting-input" min="400" max="1400" step="50" value="800">
-                            <span class="setting-unit">px</span>
+                            <div class="setting-control-inline">
+                                <button id="text-width-decrease" class="btn-icon">−</button>
+                                <input type="number" id="text-width-input" class="setting-input" step="50" value="800">
+                                <span class="setting-unit">px</span>
+                                <button id="text-width-increase" class="btn-icon">+</button>
+                            </div>
                         </div>
                         <div class="setting-buttons">
                             <button class="setting-btn" data-width="narrow" data-width-value="600">Narrow</button>
@@ -525,16 +529,20 @@ pub fn reader(config: &Config, book: &Book, _chapter_index: usize) -> String {
                     <!-- Panel Width Limits -->
                     <div class="setting-group">
                         <label>Panel Size Limits</label>
-                        <div class="setting-row-pair">
+                        <div class="setting-row-stack">
                             <div class="setting-pair">
                                 <span class="setting-pair-label">Min</span>
+                                <button id="panel-min-width-decrease" class="btn-icon btn-icon-sm">−</button>
                                 <input type="number" id="panel-min-width-input" class="setting-input" step="50" value="250">
                                 <span class="setting-unit">px</span>
+                                <button id="panel-min-width-increase" class="btn-icon btn-icon-sm">+</button>
                             </div>
                             <div class="setting-pair">
                                 <span class="setting-pair-label">Max</span>
+                                <button id="panel-max-width-decrease" class="btn-icon btn-icon-sm">−</button>
                                 <input type="number" id="panel-max-width-input" class="setting-input" step="50" value="600">
                                 <span class="setting-unit">px</span>
+                                <button id="panel-max-width-increase" class="btn-icon btn-icon-sm">+</button>
                             </div>
                         </div>
                     </div>

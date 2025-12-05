@@ -167,6 +167,15 @@
 
         // Text width - input and preset buttons
         const textWidthInput = document.getElementById('text-width-input');
+        
+        document.getElementById('text-width-decrease')?.addEventListener('click', () => {
+            const current = readingSettings.textWidth || 800;
+            setCustomTextWidth(current - 50);
+        });
+        document.getElementById('text-width-increase')?.addEventListener('click', () => {
+            const current = readingSettings.textWidth || 800;
+            setCustomTextWidth(current + 50);
+        });
         textWidthInput?.addEventListener('change', (e) => {
             setCustomTextWidth(parseInt(e.target.value));
         });
@@ -199,6 +208,23 @@
         const panelMinWidthInput = document.getElementById('panel-min-width-input');
         const panelMaxWidthInput = document.getElementById('panel-max-width-input');
 
+        // Panel min width +/- buttons
+        document.getElementById('panel-min-width-decrease')?.addEventListener('click', () => {
+            let value = (readingSettings.panelMinWidth || 250) - 50;
+            value = Math.max(200, Math.min(value, readingSettings.panelMaxWidth - 50));
+            readingSettings.panelMinWidth = value;
+            applyPanelWidthLimits();
+            updateSettingsDisplay();
+            saveReadingSettings();
+        });
+        document.getElementById('panel-min-width-increase')?.addEventListener('click', () => {
+            let value = (readingSettings.panelMinWidth || 250) + 50;
+            value = Math.max(200, Math.min(value, readingSettings.panelMaxWidth - 50));
+            readingSettings.panelMinWidth = value;
+            applyPanelWidthLimits();
+            updateSettingsDisplay();
+            saveReadingSettings();
+        });
         panelMinWidthInput?.addEventListener('change', (e) => {
             let value = parseInt(e.target.value) || 200;
             value = Math.max(200, Math.min(value, readingSettings.panelMaxWidth - 50));
@@ -208,6 +234,23 @@
             saveReadingSettings();
         });
 
+        // Panel max width +/- buttons
+        document.getElementById('panel-max-width-decrease')?.addEventListener('click', () => {
+            let value = (readingSettings.panelMaxWidth || 600) - 50;
+            value = Math.max(readingSettings.panelMinWidth + 50, Math.min(value, 1200));
+            readingSettings.panelMaxWidth = value;
+            applyPanelWidthLimits();
+            updateSettingsDisplay();
+            saveReadingSettings();
+        });
+        document.getElementById('panel-max-width-increase')?.addEventListener('click', () => {
+            let value = (readingSettings.panelMaxWidth || 600) + 50;
+            value = Math.max(readingSettings.panelMinWidth + 50, Math.min(value, 1200));
+            readingSettings.panelMaxWidth = value;
+            applyPanelWidthLimits();
+            updateSettingsDisplay();
+            saveReadingSettings();
+        });
         panelMaxWidthInput?.addEventListener('change', (e) => {
             let value = parseInt(e.target.value) || 800;
             value = Math.max(readingSettings.panelMinWidth + 50, Math.min(value, 1200));
@@ -1571,6 +1614,10 @@
         if (!bookId) return;
 
         const scrollPosition = window.scrollY;
+        
+        // Calculate progress as a percentage (0.0 - 1.0)
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const progressPercent = docHeight > 0 ? Math.min(1.0, scrollPosition / docHeight) : 0;
 
         const progress = {
             scroll: scrollPosition,
@@ -1589,7 +1636,8 @@
             body: JSON.stringify({
                 chapter: currentChapter,
                 block: 0,
-                scroll_offset: scrollPosition
+                scroll_offset: scrollPosition,
+                progress: progressPercent
             })
         }).catch(() => {
             // Ignore errors, local storage is the fallback

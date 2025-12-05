@@ -353,16 +353,21 @@ impl Library {
         chapter: usize,
         block: usize,
         offset: usize,
+        progress: f64,
     ) -> Result<()> {
         if let Some(entry) = self.books.get_mut(id) {
             entry.position_chapter = chapter;
             entry.position_block = block;
             entry.position_offset = offset;
+            entry.progress = progress.clamp(0.0, 1.0);
             entry.last_read = Some(Utc::now());
 
             // Update status if needed
-            if entry.status == ReadingStatus::Unread {
+            if entry.status == ReadingStatus::Unread && progress > 0.0 {
                 entry.status = ReadingStatus::Reading;
+            }
+            if progress >= 0.99 {
+                entry.status = ReadingStatus::Finished;
             }
 
             Ok(())

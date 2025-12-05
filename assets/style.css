@@ -410,15 +410,15 @@ a:hover {
 }
 
 .progress-bar {
-    height: 4px;
-    background: var(--bg-tertiary);
+    height: 6px;
+    background: var(--border);
     border-radius: var(--radius-full);
     overflow: hidden;
 }
 
 .progress-bar.small {
-    height: 4px;
-    width: 80px;
+    height: 6px;
+    width: 100px;
     display: inline-block;
     vertical-align: middle;
     margin-right: 0.75rem;
@@ -429,6 +429,7 @@ a:hover {
     background: var(--accent-gradient);
     border-radius: var(--radius-full);
     transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 2px;
 }
 
 /* ========== Library Page ========== */
@@ -630,6 +631,19 @@ a:hover {
     font-size: 0.75rem;
     font-weight: 600;
     color: var(--text-muted);
+}
+
+/* Progress cell in table */
+.library-table td:nth-child(4) {
+    white-space: nowrap;
+}
+
+.library-table .progress-bar {
+    background: var(--border);
+}
+
+.library-table .progress-bar .progress {
+    background: var(--accent-primary);
 }
 
 /* ========== Reader Layout ========== */
@@ -880,11 +894,21 @@ a:hover {
     margin-top: 0.5rem;
 }
 
+.setting-row-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
 .setting-pair {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
-    flex: 1;
+    gap: 0.15rem;
+}
+
+.setting-row-stack .setting-pair {
+    flex: none;
 }
 
 .setting-pair-label {
@@ -894,7 +918,14 @@ a:hover {
 }
 
 .setting-pair .setting-input {
-    width: 60px;
+    width: 50px;
+}
+
+.btn-icon-sm {
+    width: 22px !important;
+    height: 22px !important;
+    font-size: 0.85rem !important;
+    padding: 0;
 }
 
 .setting-control .btn-icon {

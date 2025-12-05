@@ -152,6 +152,8 @@ pub struct ProgressRequest {
     pub chapter: usize,
     pub block: usize,
     pub scroll_offset: usize,
+    #[serde(default)]
+    pub progress: f64,
 }
 
 #[derive(Deserialize)]
@@ -555,6 +557,7 @@ async fn get_progress(
             chapter: entry.position_chapter,
             block: entry.position_block,
             scroll_offset: entry.position_offset,
+            progress: entry.progress,
         })),
         None => Json(ApiResponse::err("Book not found")),
     }
@@ -572,6 +575,7 @@ async fn save_progress(
         progress.chapter,
         progress.block,
         progress.scroll_offset,
+        progress.progress,
     ) {
         Ok(_) => {
             // Save library to persist the progress
