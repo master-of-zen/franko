@@ -712,7 +712,7 @@ a:hover {
 .reader-settings-panel {
     position: fixed;
     top: 0;
-    right: -350px;
+    right: 0;
     width: 320px;
     min-width: 250px;
     max-width: 600px;
@@ -720,14 +720,15 @@ a:hover {
     background: var(--bg-secondary);
     border-left: 1px solid var(--border);
     z-index: 200;
-    transition: right 0.3s ease, width 0s;
+    transition: transform 0.3s ease;
     display: flex;
     flex-direction: column;
     box-shadow: -4px 0 20px rgba(0, 0, 0, 0.2);
+    transform: translateX(100%);
 }
 
 .reader-settings-panel.open {
-    right: 0;
+    transform: translateX(0);
 }
 
 .reader-settings-panel.resizing {
@@ -1101,7 +1102,7 @@ a:hover {
     border-bottom: 1px solid var(--border);
     position: sticky;
     top: 0;
-    z-index: 100;
+    z-index: 250;
 }
 
 .reader-header h1 {

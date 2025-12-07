@@ -167,7 +167,7 @@
 
         // Text width - input and preset buttons
         const textWidthInput = document.getElementById('text-width-input');
-        
+
         document.getElementById('text-width-decrease')?.addEventListener('click', () => {
             const current = readingSettings.textWidth || 800;
             setCustomTextWidth(current - 50);
@@ -1614,7 +1614,7 @@
         if (!bookId) return;
 
         const scrollPosition = window.scrollY;
-        
+
         // Calculate progress as a percentage (0.0 - 1.0)
         const docHeight = document.documentElement.scrollHeight - window.innerHeight;
         const progressPercent = docHeight > 0 ? Math.min(1.0, scrollPosition / docHeight) : 0;
