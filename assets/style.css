@@ -82,6 +82,28 @@
     --shadow-glow: 0 0 40px rgba(139, 105, 20, 0.1);
 }
 
+/* Custom theme - colors are set via JavaScript */
+.custom {
+    /* Default custom theme values - will be overridden by JS */
+    --bg-primary: #1a1a2e;
+    --bg-secondary: #242438;
+    --bg-tertiary: #2e2e44;
+    --bg-elevated: #2e2e44;
+    --bg-hover: #383850;
+    --text-primary: #eaeaea;
+    --text-secondary: #b8b8c8;
+    --text-muted: #888898;
+    --accent-primary: #6366f1;
+    --accent-secondary: #818cf8;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-light: rgba(255, 255, 255, 0.12);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+    --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.6);
+    --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.15);
+}
+
 *,
 *::before,
 *::after {
@@ -1023,6 +1045,78 @@ a:hover {
     background: #f4ecd8;
     color: #5c4b37;
     border-color: #d4c4a8;
+}
+
+.theme-btn-custom {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+    color: white;
+    border-color: #6366f1;
+}
+
+/* Custom Colors Group */
+.custom-colors-group {
+    border-top: 1px solid var(--border);
+    padding-top: 1rem;
+    margin-top: 0.5rem;
+}
+
+.color-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.color-setting-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.color-label {
+    flex: 0 0 80px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.color-picker {
+    width: 40px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    background: transparent;
+}
+
+.color-picker::-webkit-color-swatch-wrapper {
+    padding: 2px;
+}
+
+.color-picker::-webkit-color-swatch {
+    border-radius: 4px;
+    border: none;
+}
+
+.color-picker::-moz-color-swatch {
+    border-radius: 4px;
+    border: none;
+}
+
+.color-text-input {
+    flex: 1;
+    padding: 0.4rem 0.6rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    text-transform: uppercase;
+}
+
+.color-text-input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
 }
 
 #font-family-select {

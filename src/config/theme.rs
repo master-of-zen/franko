@@ -274,6 +274,48 @@ impl Default for ThemeConfig {
 }
 
 impl ThemeConfig {
+    // ========== Convenience accessors for important colors ==========
+
+    /// Get the main background color (UI background)
+    pub fn background(&self) -> &Color {
+        &self.ui.background
+    }
+
+    /// Get the main foreground/font color (UI text)
+    pub fn foreground(&self) -> &Color {
+        &self.ui.foreground
+    }
+
+    /// Get the content text color (reading area text)
+    pub fn text_color(&self) -> &Color {
+        &self.content.text
+    }
+
+    /// Get the content background color (reading area background)
+    pub fn content_background(&self) -> &Color {
+        &self.content.background
+    }
+
+    /// Set the main background color
+    pub fn set_background(&mut self, color: Color) {
+        self.ui.background = color.clone();
+        self.content.background = color;
+    }
+
+    /// Set the main foreground/font color
+    pub fn set_foreground(&mut self, color: Color) {
+        self.ui.foreground = color.clone();
+        self.content.text = color;
+    }
+
+    /// Set both background and foreground colors at once
+    pub fn set_colors(&mut self, background: Color, foreground: Color) {
+        self.set_background(background);
+        self.set_foreground(foreground);
+    }
+
+    // ========== Built-in themes ==========
+
     /// Dark theme (default)
     pub fn dark() -> Self {
         Self {

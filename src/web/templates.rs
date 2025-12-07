@@ -427,7 +427,7 @@ pub fn reader(config: &Config, book: &Book, _chapter_index: usize) -> String {
         .collect();
 
     let content = format!(
-        r#"
+        r##"
         <div class="reader-layout">
             <aside class="reader-sidebar" id="sidebar">
                 <div class="sidebar-header">
@@ -523,6 +523,34 @@ pub fn reader(config: &Config, book: &Book, _chapter_index: usize) -> String {
                             <button class="setting-btn theme-btn-light" data-theme="light">Light</button>
                             <button class="setting-btn theme-btn-dark active" data-theme="dark">Dark</button>
                             <button class="setting-btn theme-btn-sepia" data-theme="sepia">Sepia</button>
+                            <button class="setting-btn theme-btn-custom" data-theme="custom">Custom</button>
+                        </div>
+                    </div>
+
+                    <!-- Custom Theme Colors (shown when custom theme is selected) -->
+                    <div class="setting-group custom-colors-group" id="custom-colors-group" style="display: none;">
+                        <label>Custom Colors</label>
+                        <div class="color-settings">
+                            <div class="color-setting-row">
+                                <span class="color-label">Background</span>
+                                <input type="color" id="custom-color-background" class="color-picker" value="#1a1a2e">
+                                <input type="text" id="custom-color-background-text" class="color-text-input" value="#1a1a2e" maxlength="7">
+                            </div>
+                            <div class="color-setting-row">
+                                <span class="color-label">Text</span>
+                                <input type="color" id="custom-color-text" class="color-picker" value="#eaeaea">
+                                <input type="text" id="custom-color-text-text" class="color-text-input" value="#eaeaea" maxlength="7">
+                            </div>
+                            <div class="color-setting-row">
+                                <span class="color-label">Accent</span>
+                                <input type="color" id="custom-color-accent" class="color-picker" value="#6366f1">
+                                <input type="text" id="custom-color-accent-text" class="color-text-input" value="#6366f1" maxlength="7">
+                            </div>
+                            <div class="color-setting-row">
+                                <span class="color-label">Links</span>
+                                <input type="color" id="custom-color-link" class="color-picker" value="#818cf8">
+                                <input type="text" id="custom-color-link-text" class="color-text-input" value="#818cf8" maxlength="7">
+                            </div>
                         </div>
                     </div>
 
@@ -584,7 +612,7 @@ pub fn reader(config: &Config, book: &Book, _chapter_index: usize) -> String {
         <div class="reader-progress" id="progress">
             <div class="progress-fill" id="progress-fill"></div>
         </div>
-    "#,
+    "##,
         toc_items = toc_items,
         title = escape_html(&book.metadata.title),
         book_content = book_content,

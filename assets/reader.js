@@ -47,7 +47,14 @@
         theme: 'dark',
         paraSpacing: 1,
         panelMinWidth: 250,
-        panelMaxWidth: 600
+        panelMaxWidth: 600,
+        // Custom theme colors (only applied when theme is 'custom')
+        customColors: {
+            background: '#1a1a2e',
+            text: '#eaeaea',
+            accent: '#6366f1',
+            link: '#818cf8'
+        }
     };
 
     // Initialize
@@ -201,8 +208,13 @@
                 setReaderTheme(btn.dataset.theme);
                 document.querySelectorAll('[data-theme]').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
+                // Show/hide custom color controls
+                updateCustomColorVisibility();
             });
         });
+
+        // Custom color inputs
+        setupCustomColorInputs();
 
         // Panel width limit controls
         const panelMinWidthInput = document.getElementById('panel-min-width-input');
@@ -497,8 +509,43 @@
         root.style.setProperty('--font-family-reading', fonts[readingSettings.fontFamily] || fonts.serif);
 
         // Theme
-        root.classList.remove('light', 'dark', 'sepia');
+        root.classList.remove('light', 'dark', 'sepia', 'custom');
         root.classList.add(readingSettings.theme);
+
+        // Apply custom colors when custom theme is selected
+        if (readingSettings.theme === 'custom' && readingSettings.customColors) {
+            root.style.setProperty('--bg-primary', readingSettings.customColors.background);
+            root.style.setProperty('--bg-secondary', adjustColor(readingSettings.customColors.background, 10));
+            root.style.setProperty('--bg-tertiary', adjustColor(readingSettings.customColors.background, 20));
+            root.style.setProperty('--text-primary', readingSettings.customColors.text);
+            root.style.setProperty('--text-secondary', adjustColor(readingSettings.customColors.text, -20));
+            root.style.setProperty('--accent-primary', readingSettings.customColors.accent);
+            root.style.setProperty('--accent-secondary', adjustColor(readingSettings.customColors.accent, 15));
+            if (readingSettings.customColors.link) {
+                root.style.setProperty('--link-color', readingSettings.customColors.link);
+            }
+        } else {
+            // Remove custom color overrides when using preset themes
+            root.style.removeProperty('--bg-primary');
+            root.style.removeProperty('--bg-secondary');
+            root.style.removeProperty('--bg-tertiary');
+            root.style.removeProperty('--text-primary');
+            root.style.removeProperty('--text-secondary');
+            root.style.removeProperty('--accent-primary');
+            root.style.removeProperty('--accent-secondary');
+            root.style.removeProperty('--link-color');
+        }
+    }
+
+    // Helper function to lighten/darken a hex color
+    function adjustColor(hex, percent) {
+        hex = hex.replace('#', '');
+        const num = parseInt(hex, 16);
+        const amt = Math.round(2.55 * percent);
+        const R = Math.min(255, Math.max(0, (num >> 16) + amt));
+        const G = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amt));
+        const B = Math.min(255, Math.max(0, (num & 0x0000FF) + amt));
+        return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
     }
 
     function updateSettingsDisplay() {
@@ -535,11 +582,78 @@
             btn.classList.toggle('active', btn.dataset.theme === readingSettings.theme);
         });
 
+        // Update custom color inputs
+        updateCustomColorInputs();
+        updateCustomColorVisibility();
+
         // Update panel width limit inputs
         const panelMinWidthInput = document.getElementById('panel-min-width-input');
         const panelMaxWidthInput = document.getElementById('panel-max-width-input');
         if (panelMinWidthInput) panelMinWidthInput.value = readingSettings.panelMinWidth || 250;
         if (panelMaxWidthInput) panelMaxWidthInput.value = readingSettings.panelMaxWidth || 600;
+    }
+
+    // ========== Custom Theme Colors ==========
+
+    function setupCustomColorInputs() {
+        const colorInputs = ['background', 'text', 'accent', 'link'];
+        colorInputs.forEach(colorType => {
+            const input = document.getElementById(`custom-color-${colorType}`);
+            const textInput = document.getElementById(`custom-color-${colorType}-text`);
+
+            if (input) {
+                input.addEventListener('input', (e) => {
+                    setCustomColor(colorType, e.target.value);
+                    if (textInput) textInput.value = e.target.value;
+                });
+            }
+            if (textInput) {
+                textInput.addEventListener('change', (e) => {
+                    const value = e.target.value;
+                    if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
+                        setCustomColor(colorType, value);
+                        if (input) input.value = value;
+                    }
+                });
+            }
+        });
+    }
+
+    function setCustomColor(colorType, value) {
+        if (!readingSettings.customColors) {
+            readingSettings.customColors = {
+                background: '#1a1a2e',
+                text: '#eaeaea',
+                accent: '#6366f1',
+                link: '#818cf8'
+            };
+        }
+        readingSettings.customColors[colorType] = value;
+        if (readingSettings.theme === 'custom') {
+            applySettings();
+        }
+        saveReadingSettings();
+    }
+
+    function updateCustomColorInputs() {
+        if (!readingSettings.customColors) return;
+
+        const colorInputs = ['background', 'text', 'accent', 'link'];
+        colorInputs.forEach(colorType => {
+            const input = document.getElementById(`custom-color-${colorType}`);
+            const textInput = document.getElementById(`custom-color-${colorType}-text`);
+            const value = readingSettings.customColors[colorType];
+
+            if (input && value) input.value = value;
+            if (textInput && value) textInput.value = value;
+        });
+    }
+
+    function updateCustomColorVisibility() {
+        const customColorGroup = document.getElementById('custom-colors-group');
+        if (customColorGroup) {
+            customColorGroup.style.display = readingSettings.theme === 'custom' ? 'block' : 'none';
+        }
     }
 
     function saveReadingSettings() {

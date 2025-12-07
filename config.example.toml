@@ -178,11 +178,27 @@ reload = "r"
 # =============================================================================
 # Themes
 # =============================================================================
+#
+# Each theme can customize the following important colors:
+#   - background: Main background color of the interface
+#   - foreground: Primary text/font color
+#   - text: Content text color (for reading area)
+#   - content_background: Reading area background (can differ from UI background)
+#
+# Colors can be specified as:
+#   - Hex values: "#1a1b26", "#ff0000"
+#   - Named colors: "red", "blue", "white"
+#   - RGB: { r = 255, g = 128, b = 0 }
 
 # TUI Themes
 [theme.tui.tokyo-night]
-background = "#1a1b26"
-foreground = "#a9b1d6"
+# Core colors (IMPORTANT: These are the main colors users typically want to change)
+background = "#1a1b26"         # Main UI background color
+foreground = "#a9b1d6"         # Primary font/text color
+text = "#c0caf5"               # Content reading text color
+content_background = "#1a1b26" # Reading area background
+
+# UI element colors
 cursor = "#c0caf5"
 selection = "#33467c"
 accent = "#7aa2f7"
@@ -190,6 +206,12 @@ error = "#f7768e"
 warning = "#e0af68"
 success = "#9ece6a"
 info = "#7dcfff"
+border = "#414868"
+statusbar_bg = "#1f2335"
+statusbar_fg = "#737aa2"
+sidebar_bg = "#1f2335"
+sidebar_fg = "#a9b1d6"
+
 # Text styles
 heading = "#bb9af7"
 emphasis = "#7aa2f7"
@@ -199,8 +221,13 @@ link = "#7dcfff"
 quote = "#565f89"
 
 [theme.tui.dracula]
-background = "#282a36"
-foreground = "#f8f8f2"
+# Core colors
+background = "#282a36"         # Main UI background
+foreground = "#f8f8f2"         # Primary font color
+text = "#f8f8f2"               # Content text color
+content_background = "#282a36" # Reading area background
+
+# UI element colors
 cursor = "#f8f8f2"
 selection = "#44475a"
 accent = "#bd93f9"
@@ -208,6 +235,13 @@ error = "#ff5555"
 warning = "#ffb86c"
 success = "#50fa7b"
 info = "#8be9fd"
+border = "#44475a"
+statusbar_bg = "#21222c"
+statusbar_fg = "#6272a4"
+sidebar_bg = "#21222c"
+sidebar_fg = "#f8f8f2"
+
+# Text styles
 heading = "#ff79c6"
 emphasis = "#bd93f9"
 strong = "#f8f8f2"
@@ -216,8 +250,13 @@ link = "#8be9fd"
 quote = "#6272a4"
 
 [theme.tui.nord]
-background = "#2e3440"
-foreground = "#eceff4"
+# Core colors
+background = "#2e3440"         # Main UI background
+foreground = "#eceff4"         # Primary font color
+text = "#eceff4"               # Content text color
+content_background = "#2e3440" # Reading area background
+
+# UI element colors
 cursor = "#d8dee9"
 selection = "#434c5e"
 accent = "#88c0d0"
@@ -225,6 +264,13 @@ error = "#bf616a"
 warning = "#ebcb8b"
 success = "#a3be8c"
 info = "#81a1c1"
+border = "#3b4252"
+statusbar_bg = "#3b4252"
+statusbar_fg = "#4c566a"
+sidebar_bg = "#3b4252"
+sidebar_fg = "#eceff4"
+
+# Text styles
 heading = "#b48ead"
 emphasis = "#88c0d0"
 strong = "#eceff4"
@@ -232,27 +278,76 @@ code = "#a3be8c"
 link = "#81a1c1"
 quote = "#4c566a"
 
+# Custom theme example - define your own colors
+[theme.tui.custom]
+# Start with the most important colors for your reading experience:
+background = "#1e1e2e"         # Dark background
+foreground = "#cdd6f4"         # Light text for contrast
+text = "#cdd6f4"               # Reading text color
+content_background = "#1e1e2e" # Reading area background
+
+# Then customize UI elements as desired:
+accent = "#cba6f7"
+border = "#313244"
+statusbar_bg = "#181825"
+statusbar_fg = "#6c7086"
+sidebar_bg = "#181825"
+sidebar_fg = "#cdd6f4"
+
+# Status colors
+error = "#f38ba8"
+warning = "#f9e2af"
+success = "#a6e3a1"
+info = "#89b4fa"
+
+# Content text styles
+heading = "#cba6f7"
+link = "#89b4fa"
+code = "#a6e3a1"
+
 # Web Themes
+# Web themes support the same core color properties plus web-specific elements
 [theme.web.light]
-background = "#ffffff"
-foreground = "#24292e"
+# Core colors (same as TUI)
+background = "#ffffff"         # Main page background
+foreground = "#24292e"         # Primary font color
+text = "#24292e"               # Reading content text color
+content_background = "#ffffff" # Reading area background
+
+# Web-specific elements
 accent = "#0366d6"
 sidebar = "#f6f8fa"
 card = "#ffffff"
 border = "#e1e4e8"
-# Button colors
 button_primary = "#2ea44f"
 button_secondary = "#fafbfc"
 
 [theme.web.dark]
-background = "#0d1117"
-foreground = "#c9d1d9"
+# Core colors
+background = "#0d1117"         # Main page background
+foreground = "#c9d1d9"         # Primary font color
+text = "#c9d1d9"               # Reading content text color
+content_background = "#0d1117" # Reading area background
+
+# Web-specific elements
 accent = "#58a6ff"
 sidebar = "#161b22"
 card = "#21262d"
 border = "#30363d"
 button_primary = "#238636"
 button_secondary = "#21262d"
+
+[theme.web.sepia]
+# Sepia/paper theme - easy on the eyes for long reading sessions
+background = "#f4ecd8"         # Warm paper-like background
+foreground = "#5b4636"         # Brown text for reduced eye strain
+text = "#5b4636"               # Content text
+content_background = "#faf6ed" # Slightly lighter reading area
+
+accent = "#8b4513"
+sidebar = "#e8dccc"
+card = "#faf6ed"
+border = "#d4c4a8"
 
 # =============================================================================
 # Search Settings
