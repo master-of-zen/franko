@@ -195,6 +195,21 @@ pub struct RenderedLine {
     pub highlights: Vec<(usize, usize)>,
 }
 
+impl RenderedLine {
+    /// Create an empty line
+    pub fn empty(block_index: usize) -> Self {
+        Self {
+            text: String::new(),
+            block_index,
+            is_heading: false,
+            heading_level: 0,
+            is_quote: false,
+            is_code: false,
+            highlights: Vec::new(),
+        }
+    }
+}
+
 impl AppState {
     pub fn new(book: Book) -> Self {
         Self {
