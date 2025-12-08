@@ -16,33 +16,33 @@ A comprehensive list of popular themes to be implemented in Franko reader.
 - [x] Tokyo Night
 - [x] Dracula
 - [x] Nord
-- [ ] One Dark Pro
-- [ ] Atom One Dark
-- [ ] Material Dark
-- [ ] Palenight
-- [ ] Night Owl
-- [ ] Shades of Purple
-- [ ] Synthwave '84
+- [x] One Dark Pro
+- [x] Atom One Dark
+- [x] Material Dark
+- [x] Palenight
+- [x] Night Owl
+- [x] Shades of Purple
+- [x] Synthwave '84
 - [ ] Cyberpunk
-- [ ] Ayu Dark
-- [ ] Ayu Mirage
+- [x] Ayu Dark
+- [x] Ayu Mirage
 - [ ] Moonlight
 - [ ] Moonlight II
 - [ ] Vitesse Dark
-- [ ] GitHub Dark
+- [x] GitHub Dark
 - [ ] GitHub Dark Dimmed
 - [ ] GitHub Dark High Contrast
-- [ ] Rosé Pine
-- [ ] Rosé Pine Moon
-- [ ] Everforest Dark
-- [ ] Kanagawa
+- [x] Rosé Pine
+- [x] Rosé Pine Moon
+- [x] Everforest Dark
+- [x] Kanagawa
 - [ ] Kanagawa Wave
 - [ ] Kanagawa Dragon
-- [ ] Poimandres
-- [ ] Vesper
+- [x] Poimandres
+- [x] Vesper
 - [ ] Mellow
-- [ ] Oxocarbon Dark
-- [ ] Flexoki Dark
+- [x] Oxocarbon Dark
+- [x] Flexoki Dark
 - [ ] Bluloco Dark
 - [ ] Bearded Theme Arc
 - [ ] Bearded Theme Black & Gold
@@ -69,8 +69,8 @@ A comprehensive list of popular themes to be implemented in Franko reader.
 ### Catppuccin Family
 
 - [x] Catppuccin Mocha
-- [ ] Catppuccin Macchiato
-- [ ] Catppuccin Frappé
+- [x] Catppuccin Macchiato
+- [x] Catppuccin Frappé
 
 ### Monokai Family
 
@@ -87,13 +87,13 @@ A comprehensive list of popular themes to be implemented in Franko reader.
 
 - [ ] Hyper
 - [ ] Snazzy
-- [ ] Cobalt2
-- [ ] Horizon
-- [ ] Iceberg
+- [x] Cobalt2
+- [x] Horizon
+- [x] Iceberg
 - [ ] Jellybeans
 - [ ] Tender
 - [ ] Wombat
-- [ ] Zenburn
+- [x] Zenburn
 - [ ] Base16 Ocean Dark
 - [ ] Base16 Tomorrow Night
 - [ ] Base16 Eighties
@@ -136,11 +136,11 @@ A comprehensive list of popular themes to be implemented in Franko reader.
 
 - [x] Light (Default)
 - [ ] Quiet Light
-- [ ] Solarized Light
-- [ ] GitHub Light
+- [x] Solarized Light
+- [x] GitHub Light
 - [ ] GitHub Light Default
 - [ ] GitHub Light High Contrast
-- [ ] Atom One Light
+- [x] Atom One Light
 - [ ] One Light
 - [ ] Xcode Light
 - [ ] IntelliJ Light
@@ -164,10 +164,10 @@ A comprehensive list of popular themes to be implemented in Franko reader.
 
 ### Nature/Organic Light
 
-- [ ] Everforest Light
-- [ ] Rosé Pine Dawn
-- [ ] Flexoki Light
-- [ ] Ayu Light
+- [x] Everforest Light
+- [x] Rosé Pine Dawn
+- [x] Flexoki Light
+- [x] Ayu Light
 - [ ] Vitesse Light
 
 ### Paper/Reading Optimized
@@ -179,9 +179,9 @@ A comprehensive list of popular themes to be implemented in Franko reader.
 - [ ] Cream
 - [ ] Newspaper
 - [ ] E-Ink
-- [ ] Kindle
+- [x] Kindle
 - [ ] iBooks Light
-- [ ] Kobo Light
+- [x] Kobo Light
 - [ ] Nook Light
 
 ---
@@ -213,12 +213,12 @@ A comprehensive list of popular themes to be implemented in Franko reader.
 
 ### Night Reading
 
-- [ ] True Black AMOLED
-- [ ] Midnight Blue
+- [x] True Black AMOLED
+- [x] Midnight Blue
 - [ ] Deep Purple Night
 - [ ] Forest Night
 - [ ] Ocean Night
-- [ ] Warm Night
+- [x] Warm Night
 - [ ] Red Shift (reduces blue light)
 - [ ] Amber Night
 - [ ] Candlelight
@@ -433,8 +433,8 @@ A comprehensive list of popular themes to be implemented in Franko reader.
 ## Statistics
 
 **Total Themes Planned:** 250+
-**Currently Implemented:** 16
-**Progress:** ~6%
+**Currently Implemented:** 48
+**Progress:** ~19%
 
 ---
 
@@ -451,10 +451,20 @@ To add a new theme:
 
 High priority themes to implement next:
 
-1. One Dark Pro
-2. GitHub Dark/Light
-3. Rosé Pine family
-4. Everforest family
-5. True Black AMOLED
-6. E-reader inspired themes (Kindle, Kobo)
-7. Accessibility themes
+1. ~~One Dark Pro~~ ✓
+2. ~~GitHub Dark/Light~~ ✓
+3. ~~Rosé Pine family~~ ✓
+4. ~~Everforest family~~ ✓
+5. ~~True Black AMOLED~~ ✓
+6. ~~E-reader inspired themes (Kindle, Kobo)~~ ✓
+7. ~~Accessibility themes (High Contrast)~~ ✓
+8. ~~Material Dark~~ ✓
+9. ~~Night Owl~~ ✓
+10. ~~Atom One Dark/Light~~ ✓
+11. ~~Palenight~~ ✓
+12. ~~Ayu family~~ ✓
+13. ~~Horizon~~ ✓
+14. ~~Synthwave '84~~ ✓
+15. Moonlight
+16. Vitesse Dark/Light
+17. More accessibility themes

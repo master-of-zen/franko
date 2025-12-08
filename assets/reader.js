@@ -202,12 +202,22 @@
             setFontFamily(e.target.value);
         });
 
-        // Theme buttons
+        // Theme select dropdown
+        document.getElementById('theme-select')?.addEventListener('change', (e) => {
+            setReaderTheme(e.target.value);
+            // Show/hide custom color controls
+            updateCustomColorVisibility();
+        });
+
+        // Legacy theme buttons (for backwards compatibility)
         document.querySelectorAll('[data-theme]').forEach(btn => {
             btn.addEventListener('click', () => {
                 setReaderTheme(btn.dataset.theme);
                 document.querySelectorAll('[data-theme]').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
+                // Update dropdown if exists
+                const themeSelect = document.getElementById('theme-select');
+                if (themeSelect) themeSelect.value = btn.dataset.theme;
                 // Show/hide custom color controls
                 updateCustomColorVisibility();
             });
@@ -508,8 +518,28 @@
         };
         root.style.setProperty('--font-family-reading', fonts[readingSettings.fontFamily] || fonts.serif);
 
-        // Theme
-        root.classList.remove('light', 'dark', 'sepia', 'custom');
+        // Theme - remove all theme classes
+        const allThemes = [
+            // Light themes
+            'light', 'paper', 'sepia', 'solarized-light', 'gruvbox-light',
+            'catppuccin-latte', 'github-light', 'rose-pine-dawn', 'everforest-light',
+            'atom-one-light', 'ayu-light', 'night-owl-light', 'flexoki-light',
+            // Dark themes
+            'dark', 'tokyo-night', 'dracula', 'nord', 'one-dark', 'atom-one-dark', 'monokai',
+            'solarized-dark', 'gruvbox-dark', 'catppuccin-mocha', 'catppuccin-macchiato',
+            'catppuccin-frappe', 'github-dark', 'rose-pine', 'rose-pine-moon',
+            'everforest-dark', 'kanagawa', 'material-dark', 'night-owl', 'palenight',
+            'shades-of-purple', 'ayu-dark', 'ayu-mirage', 'horizon', 'cobalt2',
+            'synthwave84', 'iceberg', 'zenburn', 'poimandres', 'vesper',
+            'flexoki-dark', 'oxocarbon-dark', 'amoled', 'high-contrast',
+            // E-Reader themes
+            'kindle', 'kobo',
+            // Night reading themes
+            'midnight-blue', 'warm-night',
+            // Custom
+            'custom'
+        ];
+        allThemes.forEach(theme => root.classList.remove(theme));
         root.classList.add(readingSettings.theme);
 
         // Apply custom colors when custom theme is selected
@@ -577,7 +607,11 @@
         const fontSelect = document.getElementById('font-family-select');
         if (fontSelect) fontSelect.value = readingSettings.fontFamily;
 
-        // Update theme buttons
+        // Update theme select dropdown
+        const themeSelect = document.getElementById('theme-select');
+        if (themeSelect) themeSelect.value = readingSettings.theme;
+
+        // Update legacy theme buttons (for backwards compatibility)
         document.querySelectorAll('[data-theme]').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.theme === readingSettings.theme);
         });

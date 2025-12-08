@@ -519,12 +519,72 @@ pub fn reader(config: &Config, book: &Book, _chapter_index: usize) -> String {
                     <!-- Theme -->
                     <div class="setting-group">
                         <label>Theme</label>
-                        <div class="setting-buttons theme-buttons">
-                            <button class="setting-btn theme-btn-light" data-theme="light">Light</button>
-                            <button class="setting-btn theme-btn-dark active" data-theme="dark">Dark</button>
-                            <button class="setting-btn theme-btn-sepia" data-theme="sepia">Sepia</button>
-                            <button class="setting-btn theme-btn-custom" data-theme="custom">Custom</button>
-                        </div>
+                        <select id="theme-select">
+                            <optgroup label="Light Themes">
+                                <option value="light">Light (Default)</option>
+                                <option value="paper">Paper</option>
+                                <option value="sepia">Sepia</option>
+                                <option value="solarized-light">Solarized Light</option>
+                                <option value="gruvbox-light">Gruvbox Light</option>
+                                <option value="catppuccin-latte">Catppuccin Latte</option>
+                                <option value="github-light">GitHub Light</option>
+                                <option value="rose-pine-dawn">Rosé Pine Dawn</option>
+                                <option value="everforest-light">Everforest Light</option>
+                                <option value="atom-one-light">Atom One Light</option>
+                                <option value="ayu-light">Ayu Light</option>
+                                <option value="night-owl-light">Night Owl Light</option>
+                                <option value="flexoki-light">Flexoki Light</option>
+                            </optgroup>
+                            <optgroup label="Dark Themes">
+                                <option value="dark" selected>Dark (Default)</option>
+                                <option value="tokyo-night">Tokyo Night</option>
+                                <option value="dracula">Dracula</option>
+                                <option value="nord">Nord</option>
+                                <option value="one-dark">One Dark</option>
+                                <option value="atom-one-dark">Atom One Dark</option>
+                                <option value="monokai">Monokai</option>
+                                <option value="solarized-dark">Solarized Dark</option>
+                                <option value="gruvbox-dark">Gruvbox Dark</option>
+                                <option value="catppuccin-mocha">Catppuccin Mocha</option>
+                                <option value="catppuccin-macchiato">Catppuccin Macchiato</option>
+                                <option value="catppuccin-frappe">Catppuccin Frappé</option>
+                                <option value="github-dark">GitHub Dark</option>
+                                <option value="rose-pine">Rosé Pine</option>
+                                <option value="rose-pine-moon">Rosé Pine Moon</option>
+                                <option value="everforest-dark">Everforest Dark</option>
+                                <option value="kanagawa">Kanagawa</option>
+                                <option value="material-dark">Material Dark</option>
+                                <option value="night-owl">Night Owl</option>
+                                <option value="palenight">Palenight</option>
+                                <option value="shades-of-purple">Shades of Purple</option>
+                                <option value="ayu-dark">Ayu Dark</option>
+                                <option value="ayu-mirage">Ayu Mirage</option>
+                                <option value="horizon">Horizon</option>
+                                <option value="cobalt2">Cobalt2</option>
+                                <option value="synthwave84">Synthwave '84</option>
+                                <option value="iceberg">Iceberg</option>
+                                <option value="zenburn">Zenburn</option>
+                                <option value="poimandres">Poimandres</option>
+                                <option value="vesper">Vesper</option>
+                                <option value="flexoki-dark">Flexoki Dark</option>
+                                <option value="oxocarbon-dark">Oxocarbon Dark</option>
+                                <option value="amoled">AMOLED Black</option>
+                            </optgroup>
+                            <optgroup label="E-Reader">
+                                <option value="kindle">Kindle</option>
+                                <option value="kobo">Kobo</option>
+                            </optgroup>
+                            <optgroup label="Night Reading">
+                                <option value="midnight-blue">Midnight Blue</option>
+                                <option value="warm-night">Warm Night</option>
+                            </optgroup>
+                            <optgroup label="Accessibility">
+                                <option value="high-contrast">High Contrast</option>
+                            </optgroup>
+                            <optgroup label="Custom">
+                                <option value="custom">Custom...</option>
+                            </optgroup>
+                        </select>
                     </div>
 
                     <!-- Custom Theme Colors (shown when custom theme is selected) -->
