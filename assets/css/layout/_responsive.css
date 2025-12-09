@@ -1,0 +1,70 @@
+/* Franko Reader - Responsive Layout */
+
+@media (max-width: 768px) {
+    .site-header {
+        padding: 1rem;
+    }
+
+    .site-header nav a {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .hero {
+        padding: 3rem 1.5rem;
+    }
+
+    .hero h2 {
+        font-size: 2rem;
+    }
+
+    .home,
+    .library-page {
+        padding: 1.5rem;
+    }
+
+    .reader-header h1 {
+        display: none;
+    }
+
+    .reader-content {
+        padding: 2rem 1.25rem;
+    }
+
+    .book-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 1rem;
+    }
+
+    .library-table th:nth-child(3),
+    .library-table td:nth-child(3) {
+        display: none;
+    }
+
+    .chapter-nav {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .site-header {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .site-header nav {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .library-controls {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .library-controls input,
+    .library-controls select {
+        width: 100%;
+    }
+}

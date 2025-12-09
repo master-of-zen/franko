@@ -1,0 +1,26 @@
+/**
+ * Franko - Main CSS Entry Point
+ *
+ * This file imports all modular CSS components.
+ * Architecture follows domain-driven design with:
+ * - Base: CSS reset, variables, and design tokens
+ * - Themes: Individual theme files with CSS variable overrides
+ * - Components: Reusable UI elements (buttons, forms, modals)
+ * - Layout: Site structure and responsive styles
+ * - Pages: Page-specific styles
+ */
+
+/* ========== Base ========== */
+@import 'base/_index.css';
+
+/* ========== Themes ========== */
+@import 'themes/_index.css';
+
+/* ========== Components ========== */
+@import 'components/_index.css';
+
+/* ========== Layout ========== */
+@import 'layout/_index.css';
+
+/* ========== Pages ========== */
+@import 'pages/_index.css';

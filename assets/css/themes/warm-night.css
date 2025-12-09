@@ -1,0 +1,24 @@
+/* Franko Reader - Warm Night Theme (Reduced Blue Light) */
+
+.warm-night {
+    --bg-primary: #1a1410;
+    --bg-secondary: #231c16;
+    --bg-tertiary: #2d251e;
+    --bg-elevated: #372e26;
+    --bg-hover: #41372e;
+    --text-primary: #e8dcc8;
+    --text-secondary: #c4b8a4;
+    --text-muted: #8a7d6e;
+    --accent-primary: #d4915c;
+    --accent-secondary: #e8a872;
+    --success: #a3b86c;
+    --warning: #d4a857;
+    --error: #cc7a6a;
+    --border: rgba(138, 125, 110, 0.25);
+    --border-light: rgba(138, 125, 110, 0.4);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.7);
+    --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.8);
+    --shadow-glow: 0 0 40px rgba(212, 145, 92, 0.1);
+}

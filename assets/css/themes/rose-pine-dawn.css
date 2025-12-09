@@ -1,0 +1,24 @@
+/* Franko Reader - Rosé Pine Dawn Theme */
+
+.rose-pine-dawn {
+    --bg-primary: #faf4ed;
+    --bg-secondary: #fffaf3;
+    --bg-tertiary: #f2e9e1;
+    --bg-elevated: #faf4ed;
+    --bg-hover: #f2e9e1;
+    --text-primary: #575279;
+    --text-secondary: #797593;
+    --text-muted: #9893a5;
+    --accent-primary: #907aa9;
+    --accent-secondary: #d7827e;
+    --success: #56949f;
+    --warning: #ea9d34;
+    --error: #b4637a;
+    --border: rgba(152, 147, 165, 0.3);
+    --border-light: rgba(152, 147, 165, 0.5);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+    --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.16);
+    --shadow-glow: 0 0 40px rgba(144, 122, 169, 0.1);
+}

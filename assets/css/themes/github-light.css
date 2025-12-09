@@ -1,0 +1,24 @@
+/* Franko Reader - GitHub Light Theme */
+
+.github-light {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f6f8fa;
+    --bg-tertiary: #eaeef2;
+    --bg-elevated: #ffffff;
+    --bg-hover: #eaeef2;
+    --text-primary: #24292f;
+    --text-secondary: #57606a;
+    --text-muted: #8c959f;
+    --accent-primary: #0969da;
+    --accent-secondary: #0550ae;
+    --success: #1a7f37;
+    --warning: #9a6700;
+    --error: #cf222e;
+    --border: rgba(140, 149, 159, 0.2);
+    --border-light: rgba(140, 149, 159, 0.4);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+    --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.16);
+    --shadow-glow: 0 0 40px rgba(9, 105, 218, 0.1);
+}

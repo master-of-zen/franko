@@ -1,0 +1,24 @@
+/* Franko Reader - Poimandres Theme */
+
+.poimandres {
+    --bg-primary: #1b1e28;
+    --bg-secondary: #171922;
+    --bg-tertiary: #232634;
+    --bg-elevated: #2b2f3f;
+    --bg-hover: #33384a;
+    --text-primary: #e4f0fb;
+    --text-secondary: #a6accd;
+    --text-muted: #767c9d;
+    --accent-primary: #add7ff;
+    --accent-secondary: #91b4d5;
+    --success: #5de4c7;
+    --warning: #fffac2;
+    --error: #d0679d;
+    --border: rgba(118, 124, 157, 0.3);
+    --border-light: rgba(118, 124, 157, 0.5);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+    --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.7);
+    --shadow-glow: 0 0 40px rgba(173, 215, 255, 0.15);
+}

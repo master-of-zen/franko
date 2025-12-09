@@ -1,0 +1,21 @@
+/* Franko Reader - Sepia Theme */
+
+.sepia {
+    --bg-primary: #f4ecd8;
+    --bg-secondary: #faf6ed;
+    --bg-tertiary: #efe7d5;
+    --bg-elevated: #faf6ed;
+    --bg-hover: #e8ddc6;
+    --text-primary: #3d3427;
+    --text-secondary: #5c4b37;
+    --text-muted: #8b7355;
+    --accent-primary: #8b6914;
+    --accent-secondary: #a67c00;
+    --border: rgba(139, 115, 85, 0.15);
+    --border-light: rgba(139, 115, 85, 0.25);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+    --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.15);
+    --shadow-glow: 0 0 40px rgba(139, 105, 20, 0.1);
+}

@@ -1,0 +1,24 @@
+/* Franko Reader - Everforest Dark Theme */
+
+.everforest-dark {
+    --bg-primary: #2d353b;
+    --bg-secondary: #272e33;
+    --bg-tertiary: #343f44;
+    --bg-elevated: #3d484d;
+    --bg-hover: #475258;
+    --text-primary: #d3c6aa;
+    --text-secondary: #a7c080;
+    --text-muted: #859289;
+    --accent-primary: #a7c080;
+    --accent-secondary: #7fbbb3;
+    --success: #a7c080;
+    --warning: #dbbc7f;
+    --error: #e67e80;
+    --border: rgba(133, 146, 137, 0.3);
+    --border-light: rgba(133, 146, 137, 0.5);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+    --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.7);
+    --shadow-glow: 0 0 40px rgba(167, 192, 128, 0.15);
+}

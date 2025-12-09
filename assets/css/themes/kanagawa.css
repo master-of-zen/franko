@@ -1,0 +1,24 @@
+/* Franko Reader - Kanagawa Theme */
+
+.kanagawa {
+    --bg-primary: #1f1f28;
+    --bg-secondary: #16161d;
+    --bg-tertiary: #2a2a37;
+    --bg-elevated: #363646;
+    --bg-hover: #43434f;
+    --text-primary: #dcd7ba;
+    --text-secondary: #c8c093;
+    --text-muted: #727169;
+    --accent-primary: #7e9cd8;
+    --accent-secondary: #957fb8;
+    --success: #98bb6c;
+    --warning: #e6c384;
+    --error: #c34043;
+    --border: rgba(114, 113, 105, 0.3);
+    --border-light: rgba(114, 113, 105, 0.5);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+    --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.7);
+    --shadow-glow: 0 0 40px rgba(126, 156, 216, 0.15);
+}

@@ -1,0 +1,24 @@
+/* Franko Reader - Kindle Theme (E-Reader Inspired) */
+
+.kindle {
+    --bg-primary: #f5f1ea;
+    --bg-secondary: #ede7dd;
+    --bg-tertiary: #e5ded2;
+    --bg-elevated: #f5f1ea;
+    --bg-hover: #e5ded2;
+    --text-primary: #1a1a1a;
+    --text-secondary: #3d3d3d;
+    --text-muted: #7a7a7a;
+    --accent-primary: #1a8cff;
+    --accent-secondary: #007acc;
+    --success: #2d8a2d;
+    --warning: #cc7a00;
+    --error: #cc0000;
+    --border: rgba(0, 0, 0, 0.08);
+    --border-light: rgba(0, 0, 0, 0.12);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.08);
+    --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.1);
+    --shadow-glow: none;
+}

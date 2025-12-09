@@ -1,0 +1,65 @@
+/* Franko Reader - Theme Index
+ * This file imports all available themes.
+ * Each theme file defines CSS custom properties for its color scheme.
+ */
+
+/* Core themes */
+@import url('light.css');
+@import url('sepia.css');
+@import url('custom.css');
+
+/* Dark themes */
+@import url('tokyo-night.css');
+@import url('dracula.css');
+@import url('nord.css');
+@import url('one-dark.css');
+@import url('monokai.css');
+@import url('solarized-dark.css');
+@import url('gruvbox-dark.css');
+@import url('catppuccin-mocha.css');
+@import url('catppuccin-macchiato.css');
+@import url('catppuccin-frappe.css');
+@import url('github-dark.css');
+@import url('rose-pine.css');
+@import url('rose-pine-moon.css');
+@import url('everforest-dark.css');
+@import url('kanagawa.css');
+@import url('high-contrast.css');
+@import url('amoled.css');
+@import url('material-dark.css');
+@import url('night-owl.css');
+@import url('atom-one-dark.css');
+@import url('palenight.css');
+@import url('shades-of-purple.css');
+@import url('ayu-dark.css');
+@import url('ayu-mirage.css');
+@import url('horizon.css');
+@import url('cobalt2.css');
+@import url('synthwave84.css');
+@import url('iceberg.css');
+@import url('zenburn.css');
+@import url('poimandres.css');
+@import url('vesper.css');
+@import url('flexoki-dark.css');
+@import url('oxocarbon-dark.css');
+
+/* Light themes */
+@import url('solarized-light.css');
+@import url('gruvbox-light.css');
+@import url('catppuccin-latte.css');
+@import url('github-light.css');
+@import url('rose-pine-dawn.css');
+@import url('everforest-light.css');
+@import url('paper.css');
+@import url('atom-one-light.css');
+@import url('ayu-light.css');
+@import url('night-owl-light.css');
+@import url('flexoki-light.css');
+
+/* E-Reader inspired themes */
+@import url('kindle.css');
+@import url('kobo.css');
+
+/* Night reading themes */
+@import url('midnight-blue.css');
+@import url('warm-night.css');

@@ -1,0 +1,24 @@
+/* Franko Reader - One Dark Theme */
+
+.one-dark {
+    --bg-primary: #282c34;
+    --bg-secondary: #21252b;
+    --bg-tertiary: #2c313c;
+    --bg-elevated: #333842;
+    --bg-hover: #3e4451;
+    --text-primary: #abb2bf;
+    --text-secondary: #9da5b4;
+    --text-muted: #5c6370;
+    --accent-primary: #61afef;
+    --accent-secondary: #c678dd;
+    --success: #98c379;
+    --warning: #e5c07b;
+    --error: #e06c75;
+    --border: rgba(92, 99, 112, 0.3);
+    --border-light: rgba(92, 99, 112, 0.5);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+    --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.7);
+    --shadow-glow: 0 0 40px rgba(97, 175, 239, 0.15);
+}

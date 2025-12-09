@@ -1,0 +1,24 @@
+/* Franko Reader - Atom One Light Theme */
+
+.atom-one-light {
+    --bg-primary: #fafafa;
+    --bg-secondary: #f0f0f0;
+    --bg-tertiary: #e5e5e5;
+    --bg-elevated: #fafafa;
+    --bg-hover: #e5e5e5;
+    --text-primary: #383a42;
+    --text-secondary: #4e5062;
+    --text-muted: #a0a1a7;
+    --accent-primary: #4078f2;
+    --accent-secondary: #a626a4;
+    --success: #50a14f;
+    --warning: #c18401;
+    --error: #e45649;
+    --border: rgba(160, 161, 167, 0.3);
+    --border-light: rgba(160, 161, 167, 0.5);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+    --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.16);
+    --shadow-glow: 0 0 40px rgba(64, 120, 242, 0.1);
+}

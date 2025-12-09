@@ -1,0 +1,24 @@
+/* Franko Reader - Gruvbox Light Theme */
+
+.gruvbox-light {
+    --bg-primary: #fbf1c7;
+    --bg-secondary: #f2e5bc;
+    --bg-tertiary: #ebdbb2;
+    --bg-elevated: #fbf1c7;
+    --bg-hover: #ebdbb2;
+    --text-primary: #3c3836;
+    --text-secondary: #504945;
+    --text-muted: #928374;
+    --accent-primary: #d65d0e;
+    --accent-secondary: #af3a03;
+    --success: #79740e;
+    --warning: #b57614;
+    --error: #cc241d;
+    --border: rgba(146, 131, 116, 0.3);
+    --border-light: rgba(146, 131, 116, 0.5);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+    --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.16);
+    --shadow-glow: 0 0 40px rgba(214, 93, 14, 0.1);
+}

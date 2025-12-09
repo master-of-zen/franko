@@ -1,0 +1,24 @@
+/* Franko Reader - Vesper Theme */
+
+.vesper {
+    --bg-primary: #101010;
+    --bg-secondary: #0a0a0a;
+    --bg-tertiary: #1a1a1a;
+    --bg-elevated: #232323;
+    --bg-hover: #2d2d2d;
+    --text-primary: #b3b3b3;
+    --text-secondary: #8a8a8a;
+    --text-muted: #505050;
+    --accent-primary: #ffc799;
+    --accent-secondary: #ffb380;
+    --success: #99ffcc;
+    --warning: #ffc799;
+    --error: #ff9999;
+    --border: rgba(80, 80, 80, 0.3);
+    --border-light: rgba(80, 80, 80, 0.5);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.7);
+    --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.8);
+    --shadow-glow: 0 0 40px rgba(255, 199, 153, 0.1);
+}

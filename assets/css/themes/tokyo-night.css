@@ -1,0 +1,24 @@
+/* Franko Reader - Tokyo Night Theme */
+
+.tokyo-night {
+    --bg-primary: #1a1b26;
+    --bg-secondary: #1f2335;
+    --bg-tertiary: #24283b;
+    --bg-elevated: #292e42;
+    --bg-hover: #33467c;
+    --text-primary: #c0caf5;
+    --text-secondary: #a9b1d6;
+    --text-muted: #565f89;
+    --accent-primary: #7aa2f7;
+    --accent-secondary: #bb9af7;
+    --success: #9ece6a;
+    --warning: #e0af68;
+    --error: #f7768e;
+    --border: rgba(86, 95, 137, 0.3);
+    --border-light: rgba(86, 95, 137, 0.5);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+    --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.7);
+    --shadow-glow: 0 0 40px rgba(122, 162, 247, 0.15);
+}

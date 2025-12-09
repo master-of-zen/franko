@@ -1,0 +1,24 @@
+/* Franko Reader - High Contrast Theme */
+
+.high-contrast {
+    --bg-primary: #000000;
+    --bg-secondary: #0a0a0a;
+    --bg-tertiary: #141414;
+    --bg-elevated: #1e1e1e;
+    --bg-hover: #282828;
+    --text-primary: #ffffff;
+    --text-secondary: #f0f0f0;
+    --text-muted: #a0a0a0;
+    --accent-primary: #00d4ff;
+    --accent-secondary: #00ff88;
+    --success: #00ff00;
+    --warning: #ffff00;
+    --error: #ff0000;
+    --border: rgba(255, 255, 255, 0.3);
+    --border-light: rgba(255, 255, 255, 0.5);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.6);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.7);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.8);
+    --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.9);
+    --shadow-glow: 0 0 40px rgba(0, 212, 255, 0.2);
+}

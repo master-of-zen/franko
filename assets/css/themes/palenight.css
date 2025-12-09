@@ -1,0 +1,24 @@
+/* Franko Reader - Palenight Theme */
+
+.palenight {
+    --bg-primary: #292d3e;
+    --bg-secondary: #232635;
+    --bg-tertiary: #32374d;
+    --bg-elevated: #3a3f58;
+    --bg-hover: #444a64;
+    --text-primary: #a6accd;
+    --text-secondary: #959dcb;
+    --text-muted: #676e95;
+    --accent-primary: #82aaff;
+    --accent-secondary: #c792ea;
+    --success: #c3e88d;
+    --warning: #ffcb6b;
+    --error: #f07178;
+    --border: rgba(103, 110, 149, 0.3);
+    --border-light: rgba(103, 110, 149, 0.5);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+    --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.7);
+    --shadow-glow: 0 0 40px rgba(130, 170, 255, 0.15);
+}

@@ -1,0 +1,24 @@
+/* Franko Reader - Flexoki Light Theme */
+
+.flexoki-light {
+    --bg-primary: #fffcf0;
+    --bg-secondary: #f2f0e5;
+    --bg-tertiary: #e6e4d9;
+    --bg-elevated: #fffcf0;
+    --bg-hover: #e6e4d9;
+    --text-primary: #100f0f;
+    --text-secondary: #343331;
+    --text-muted: #878580;
+    --accent-primary: #da702c;
+    --accent-secondary: #d14d41;
+    --success: #66800b;
+    --warning: #ad8301;
+    --error: #af3029;
+    --border: rgba(135, 133, 128, 0.2);
+    --border-light: rgba(135, 133, 128, 0.4);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+    --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.16);
+    --shadow-glow: 0 0 40px rgba(218, 112, 44, 0.1);
+}

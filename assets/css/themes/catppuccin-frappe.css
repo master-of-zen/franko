@@ -1,0 +1,24 @@
+/* Franko Reader - Catppuccin Frappé Theme */
+
+.catppuccin-frappe {
+    --bg-primary: #303446;
+    --bg-secondary: #292c3c;
+    --bg-tertiary: #414559;
+    --bg-elevated: #51576d;
+    --bg-hover: #626880;
+    --text-primary: #c6d0f5;
+    --text-secondary: #b5bfe2;
+    --text-muted: #737994;
+    --accent-primary: #ca9ee6;
+    --accent-secondary: #f4b8e4;
+    --success: #a6d189;
+    --warning: #e5c890;
+    --error: #e78284;
+    --border: rgba(115, 121, 148, 0.3);
+    --border-light: rgba(115, 121, 148, 0.5);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+    --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.7);
+    --shadow-glow: 0 0 40px rgba(202, 158, 230, 0.15);
+}

@@ -1,0 +1,24 @@
+/* Franko Reader - Kobo Theme (E-Reader Inspired) */
+
+.kobo {
+    --bg-primary: #f8f4ec;
+    --bg-secondary: #f0ebe1;
+    --bg-tertiary: #e8e2d6;
+    --bg-elevated: #f8f4ec;
+    --bg-hover: #e8e2d6;
+    --text-primary: #2b2b2b;
+    --text-secondary: #4a4a4a;
+    --text-muted: #8a8a8a;
+    --accent-primary: #e31837;
+    --accent-secondary: #c21530;
+    --success: #2d8a2d;
+    --warning: #cc7a00;
+    --error: #cc0000;
+    --border: rgba(0, 0, 0, 0.06);
+    --border-light: rgba(0, 0, 0, 0.1);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.08);
+    --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.1);
+    --shadow-glow: none;
+}

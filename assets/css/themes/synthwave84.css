@@ -1,0 +1,24 @@
+/* Franko Reader - Synthwave '84 Theme */
+
+.synthwave84 {
+    --bg-primary: #262335;
+    --bg-secondary: #1e1a2b;
+    --bg-tertiary: #2e2a40;
+    --bg-elevated: #38344b;
+    --bg-hover: #433f56;
+    --text-primary: #f0e8e8;
+    --text-secondary: #d0c8c8;
+    --text-muted: #848bbd;
+    --accent-primary: #f97e72;
+    --accent-secondary: #36f9f6;
+    --success: #72f1b8;
+    --warning: #fede5d;
+    --error: #fe4450;
+    --border: rgba(132, 139, 189, 0.3);
+    --border-light: rgba(132, 139, 189, 0.5);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+    --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.7);
+    --shadow-glow: 0 0 40px rgba(249, 126, 114, 0.2);
+}

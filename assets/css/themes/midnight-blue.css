@@ -1,0 +1,24 @@
+/* Franko Reader - Midnight Blue Theme (Night Reading) */
+
+.midnight-blue {
+    --bg-primary: #0d1b2a;
+    --bg-secondary: #1b263b;
+    --bg-tertiary: #243447;
+    --bg-elevated: #2d3f54;
+    --bg-hover: #374a60;
+    --text-primary: #e0e6ed;
+    --text-secondary: #a8b5c2;
+    --text-muted: #6b7d8f;
+    --accent-primary: #5e8fc2;
+    --accent-secondary: #7eb3e3;
+    --success: #6fbf7f;
+    --warning: #d4a157;
+    --error: #d46a6a;
+    --border: rgba(107, 125, 143, 0.25);
+    --border-light: rgba(107, 125, 143, 0.4);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.7);
+    --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.8);
+    --shadow-glow: 0 0 40px rgba(94, 143, 194, 0.1);
+}
